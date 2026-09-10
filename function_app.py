@@ -38,7 +38,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.route(route="test")
 def test(req: func.HttpRequest) -> func.HttpResponse:
-    return func.HttpResponse("OK")
+    return func.HttpResponse("OK2")
 
 # def set_secret(secret_value: str, secret_name: str):
 #     """ """
