@@ -14,4 +14,3 @@ pandas
 pyodbc
 
 sendgrid
-``
