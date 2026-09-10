@@ -9,7 +9,12 @@ import azure.functions as func
 import logging
 import os
 
-# from azure.keyvault.secrets import SecretClient
+try:
+    from azure.keyvault.secrets import SecretClient
+    logging.info("Key Vault import successful")
+except Exception as e:
+    logging.error(f"Key Vault import failed: {e}")
+    raise
 # from azure.storage.blob import BlobServiceClient
 # from azure.identity import DefaultAzureCredential
 # import base64
