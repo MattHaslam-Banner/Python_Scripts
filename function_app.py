@@ -10,11 +10,16 @@ import logging
 import os
 
 try:
-    from azure.keyvault.secrets import SecretClient
-    logging.info("Key Vault import successful")
+    import azure.keyvault.secrets
+    print("azure.keyvault.secrets OK")
 except Exception as e:
-    logging.error(f"Key Vault import failed: {e}")
-    raise
+    raise Exception(f"azure.keyvault.secrets FAILED: {e}")
+
+try:
+    import azure.identity
+    print("azure.identity OK")
+except Exception as e:
+    raise Exception(f"azure.identity FAILED: {e}")
 # from azure.storage.blob import BlobServiceClient
 # from azure.identity import DefaultAzureCredential
 # import base64
