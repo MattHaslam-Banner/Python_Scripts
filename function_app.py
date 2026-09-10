@@ -11,7 +11,7 @@ import os
 
 # from azure.keyvault.secrets import SecretClient
 # from azure.storage.blob import BlobServiceClient
-from azure.identity import DefaultAzureCredential
+# from azure.identity import DefaultAzureCredential
 # import base64
 # import datetime
 # from io import StringIO, BytesIO
