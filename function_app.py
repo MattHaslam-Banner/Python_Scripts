@@ -5,15 +5,6 @@ import logging
 
 app = func.FunctionApp()
 
-@app.timer_trigger(schedule="0 0 0 1 * *", arg_name="myTimer", run_on_startup=False,
-              use_monitor=False) 
-def ExSWISchoolsOrderForm(myTimer: func.TimerRequest) -> None:
-    
-    if myTimer.past_due:
-        logging.info('The timer is past due!')
-
-    logging.info('GP Test Timer')
-
 @app.route(route="ExSWISalesOrderForm", auth_level=func.AuthLevel.FUNCTION)
 def ExSWISalesOrderForm(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
