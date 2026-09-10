@@ -6,7 +6,7 @@ azure-functions
 azure-identity
 azure-keyvault-secrets
 azure-storage-blob
-openpyxl
-pandas
-pyodbc
-sendgrid
+# openpyxl
+# pandas
+# pyodbc
+# sendgrid
