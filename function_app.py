@@ -24,6 +24,9 @@ from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileT
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
+@app.route(route="test")
+def test(req: func.HttpRequest) -> func.HttpResponse:
+return func.HttpResponse("OK")
 
 def set_secret(secret_value: str, secret_name: str):
     """ """
