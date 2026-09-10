@@ -15,11 +15,11 @@ try:
 except Exception as e:
     raise Exception(f"azure.keyvault.secrets FAILED: {e}")
 
-# try:
-#     import azure.identity
-#     print("azure.identity OK")
-# except Exception as e:
-#     raise Exception(f"azure.identity FAILED: {e}")
+try:
+    import azure.identity
+    print("azure.identity OK")
+except Exception as e:
+    raise Exception(f"azure.identity FAILED: {e}")
 # from azure.storage.blob import BlobServiceClient
 # from azure.identity import DefaultAzureCredential
 # import base64
