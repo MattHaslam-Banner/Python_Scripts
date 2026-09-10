@@ -9,11 +9,11 @@ import azure.functions as func
 import logging
 import os
 
-try:
-    import azure.keyvault.secrets
-    print("azure.keyvault.secrets OK")
-except Exception as e:
-    raise Exception(f"azure.keyvault.secrets FAILED: {e}")
+# try:
+#     import azure.keyvault.secrets
+#     print("azure.keyvault.secrets OK")
+# except Exception as e:
+#     raise Exception(f"azure.keyvault.secrets FAILED: {e}")
 
 # try:
 #     import azure.identity
