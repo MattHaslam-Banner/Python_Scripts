@@ -4,21 +4,23 @@
 #
 # sys.path.append("./custom_packages")
 
-from azure.identity import DefaultAzureCredential
+
 import azure.functions as func
-from azure.keyvault.secrets import SecretClient
-from azure.storage.blob import BlobServiceClient
-import base64
-import datetime
-from io import StringIO, BytesIO
 import logging
 import os
-from openpyxl import load_workbook
-from openpyxl.styles import Border, Side, Font
-import pandas as pd
-import pyodbc
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+
+# from azure.keyvault.secrets import SecretClient
+# from azure.storage.blob import BlobServiceClient
+# from azure.identity import DefaultAzureCredential
+# import base64
+# import datetime
+# from io import StringIO, BytesIO
+# from openpyxl import load_workbook
+# from openpyxl.styles import Border, Side, Font
+# import pandas as pd
+# import pyodbc
+# from sendgrid import SendGridAPIClient
+# from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 
 # import time
 
