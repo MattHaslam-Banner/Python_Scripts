@@ -5,7 +5,7 @@
 azure-functions
 azure-identity
 azure-keyvault-secrets
-azure-storage-blob
+# azure-storage-blob
 # openpyxl
 # pandas
 # pyodbc
