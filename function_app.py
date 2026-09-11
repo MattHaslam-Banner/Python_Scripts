@@ -2,7 +2,7 @@ import azure.functions as func
 import datetime
 import json
 import logging
-import azure.identity as identity
+from azure.identity import DefaultAzureCredential
 
 
 app = func.FunctionApp()
