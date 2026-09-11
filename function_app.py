@@ -71,8 +71,12 @@ def read_data():
     sqlserver_password = get_secret("ban-powbi-sql-01-password")
     connection_string = f"DRIVER={driver};SERVER={server_name};DATABASE={database_name};UID={sqlserver_username};PWD={sqlserver_password};TrustServerCertificate=yes"
 
+    
+    logging.info(f"pyodbc before")
+    logging.info(f"Connection string: {connection_string}")
     # Generate connection
     connection = pyodbc.connect(connection_string)
+    logging.info(f"pydodbc after")
 
     # Queries for price, stock, and sales
     query_price = "SELECT * FROM clean_swi_txbannerwebplatform.PriceBySchool"
