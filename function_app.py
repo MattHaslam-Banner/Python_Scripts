@@ -257,9 +257,11 @@ def send_email_with_attachment(buffer: BytesIO, recipient: pd.Series):
 
     # Create the email object
     email_recipient = recipient.ContactEmail # recipient.ContactEmail
+    to_emails = [email.strip() for email in recipient.ContactEmail.split(";")]
+
     message = Mail(
         from_email="nasiruddin.patel@banner.co.uk",
-        to_emails=email_recipient,
+        to_emails=to_emails,
         subject=f"Banner Order Form - {recipient.SchoolName}",
         html_content=f'<p>Hi {recipient.ContactFirstName},</p><p>Please find attached the Stock And Sales Report. For any queries, please contact swicam@monkhouse.com. </p><p>Thank you.</p>'
     )
