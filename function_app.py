@@ -2,7 +2,7 @@ import azure.functions as func
 import datetime
 import json
 import logging
-import azure.indentity as identity
+import azure.identity as identity
 
 
 app = func.FunctionApp()
