@@ -59,6 +59,8 @@ def read_data():
 
     :return:
     """
+    logging.info(f"Read Data Function called")
+
     # Define your Azure SQL Database connection_db details
     server_name = "ban-powbi-sql-01.database.windows.net"
     database_name = "banner-platform"
@@ -78,12 +80,14 @@ def read_data():
     query_sales = "SELECT * FROM clean_swi_txbannerwebplatform.SalesBySchool"
     query_recipients = "SELECT * FROM clean_swi_txbannerwebplatform.PurchaseOrderFormRecipients"
 
+    logging.info(f"Read Data Function sql scripts set")
     # Extract dataframes
     df_price = pd.read_sql(query_price, connection)
     df_stock = pd.read_sql(query_stock, connection)
     df_sales = pd.read_sql(query_sales, connection)
     df_recipients = pd.read_sql(query_recipients, connection)
 
+    logging.info(f"data frames extracted")
     # Return Dataframes
     return df_price, df_stock, df_sales, df_recipients
 
