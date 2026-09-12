@@ -325,12 +325,6 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="Line_Reports")
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
-    logging.info("report 1")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
-    dataset = fetch_datalake_query(query)
-    buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
-
     logging.info("report 2")
     query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
     logging.info("fetch Data")
@@ -339,6 +333,14 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     buffer = build_raw_Excel(dataset)
     logging.info("Send email")
     send_basic_email_report(buffer=buffer, report_name="Line Report SKU Business")
+
+    logging.info("report 1")
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+    dataset = fetch_datalake_query(query)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
+
+
 
     logging.info("report 3")
     query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
