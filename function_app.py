@@ -333,8 +333,11 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     logging.info("report 2")
     query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
+    logging.info("fetch Data")
     dataset = fetch_datalake_query(query)
+    logging.info("build Excel")
     buffer = build_raw_Excel(dataset)
+    logging.info("Send email")
     send_basic_email_report(buffer=buffer, report_name="Line Report SKU Business")
 
     logging.info("report 3")
@@ -445,3 +448,4 @@ def send_basic_email_report(buffer: BytesIO, report_name: str):
         logging.info(f"Email sent! Status Code: {response.status_code}")
     except Exception as e:
         logging.info(f"Error sending email: {str(e)}")
+        raise
