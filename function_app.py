@@ -320,3 +320,107 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
     # blob_client.upload_blob(buffer, overwrite=True)
 
     return func.HttpResponse("BUILT ORDER FORM ran successfully!", status_code=200)
+
+
+@app.route(route="Line_Reports")
+def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
+
+    query1 = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+
+    dataset = fetch_datalake_query(query1)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report SKU")
+
+    return func.HttpResponse("Test Function")
+
+def fetch_datalake_query(querystr: str):
+    """
+
+    :return:
+    """
+    # Define your Azure SQL Database connection_db details
+    server_name = "ban-powbi-sql-01.database.windows.net"
+    database_name = "banner-platform"
+    driver = (
+        "{ODBC Driver 18 for SQL Server}"  # Use the appropriate driver version
+    )
+
+    sqlserver_username = get_secret("ban-powbi-sql-01-username")
+    sqlserver_password = get_secret("ban-powbi-sql-01-password")
+    connection_string = f"DRIVER={driver};SERVER={server_name};DATABASE={database_name};UID={sqlserver_username};PWD={sqlserver_password};TrustServerCertificate=yes"
+
+    # Generate connection
+    connection = pyodbc.connect(connection_string)
+
+    logging.info(f"Read Data Function sql scripts set")
+    # Extract dataframes
+    df = pd.read_sql(querystr, connection)
+
+    # Return Dataframes
+    return df
+
+def build_raw_Excel(
+    df: pd.DataFrame
+):
+    """
+    Build an Excel file in memory and return it as a BytesIO object.
+    """
+
+    buffer = BytesIO()
+
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df.to_excel(
+            writer,
+            sheet_name="Report",
+            index=False
+        )
+
+    buffer.seek(0)
+
+    return buffer
+
+def send_basic_email_report(buffer: BytesIO, report_name: str):
+    """
+
+    :param buffer:
+    :param recipient:
+    :return:
+    """
+    # Set your API key
+    # API Keys:
+    # sendgrid-api-key -> kiko.rullan@banner.co.uk
+    # sendgrid-api-key-Nov24 -> nasiruddin.patel@banner.co.uk
+    sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
+
+    # Create the email object
+    to_emails = "george.petch@monkhouse.com"
+
+    message = Mail(
+        from_email="nasiruddin.patel@banner.co.uk",
+        to_emails=to_emails,
+        subject=f"{report_name}",
+        html_content=f'<p>Hi,</p><p>Please find attached the Line Report Report. For any queries please contact Banner IT. </p><p>Thank you.</p>'
+    )
+
+    # Encode the buffer content to base64
+    buffer_content = buffer.getvalue()
+    encoded_file = base64.b64encode(buffer_content).decode('utf-8')
+
+    # Create an attachment object for the Excel file
+    attachment = Attachment(
+        FileContent(encoded_file),  # Base64 encoded file content
+        FileName(f'{report_name}.xlsx'),  # Name of the attachment file
+        FileType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),  # MIME type for Excel
+        Disposition('attachment')  # Disposition (attached file)
+    )
+
+    # Add attachment to the email
+    message.attachment = attachment
+
+    try:
+        # Send the email
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+        logging.info(f"Email sent! Status Code: {response.status_code}")
+    except Exception as e:
+        logging.info(f"Error sending email: {str(e)}")
