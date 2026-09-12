@@ -368,12 +368,8 @@ def fetch_datalake_query(querystr: str):
     sqlserver_password = get_secret("ban-powbi-sql-01-password")
     connection_string = f"DRIVER={driver};SERVER={server_name};DATABASE={database_name};UID={sqlserver_username};PWD={sqlserver_password};TrustServerCertificate=yes"
 
-    # Generate connection
-    connection = pyodbc.connect(connection_string)
-
-    logging.info(f"Read Data Function sql scripts set")
-    # Extract dataframes
-    df = pd.read_sql(querystr, connection)
+    with pyodbc.connect(connection_string) as connection:
+        df = pd.read_sql(querystr, connection)
 
     # Return Dataframes
     return df
