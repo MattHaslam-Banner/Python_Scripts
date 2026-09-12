@@ -325,11 +325,30 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="Line_Reports")
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
-    query1 = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
-
-    dataset = fetch_datalake_query(query1)
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+    dataset = fetch_datalake_query(query)
     buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report SKU")
+    send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
+
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
+    dataset = fetch_datalake_query(query)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report SKU Business")
+
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
+    dataset = fetch_datalake_query(query)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
+
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
+    dataset = fetch_datalake_query(query)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
+
+    query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
+    dataset = fetch_datalake_query(query)
+    buffer = build_raw_Excel(dataset)
+    send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
 
     return func.HttpResponse("Test Function")
 
