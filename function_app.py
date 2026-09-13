@@ -394,12 +394,10 @@ def build_raw_Excel(
 
     buffer = BytesIO()
 
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        df.to_excel(
-            writer,
-            sheet_name="Report",
-            index=False
-        )
+    df.to_csv(
+        buffer,
+        index=False
+    )
 
     buffer.seek(0)
 
