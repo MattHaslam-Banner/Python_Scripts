@@ -333,6 +333,9 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     buffer = build_raw_Excel(dataset)
     logging.info("Send email")
     send_basic_email_report(buffer=buffer, report_name="Line Report SKU Business")
+    del dataset
+    del buffer
+
 
     logging.info("report 1")
     query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
@@ -382,6 +385,13 @@ def fetch_datalake_query(querystr: str):
     with pyodbc.connect(connection_string) as connection:
         df = pd.read_sql(querystr, connection)
 
+    logging.info(
+        f"Query returned {len(df):,} rows x {len(df.columns)} columns"
+    )
+
+    memory_mb = df.memory_usage(deep=True).sum() / (1024 * 1024)
+    logging.info(f"DataFrame memory usage: {memory_mb:.2f} MB")
+
     # Return Dataframes
     return df
 
@@ -400,6 +410,9 @@ def build_raw_Excel(
     )
 
     buffer.seek(0)
+
+    excel_size_mb = len(buffer.getvalue()) / (1024 * 1024)
+    logging.info(f"Excel size: {excel_size_mb:.2f} MB")
 
     return buffer
 
@@ -433,8 +446,8 @@ def send_basic_email_report(buffer: BytesIO, report_name: str):
     # Create an attachment object for the Excel file
     attachment = Attachment(
         FileContent(encoded_file),  # Base64 encoded file content
-        FileName(f'{report_name}.xlsx'),  # Name of the attachment file
-        FileType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),  # MIME type for Excel
+        FileName(f'{report_name}.csv'),  # Name of the attachment file
+        FileType('text/csv'),  # MIME type for CSV
         Disposition('attachment')  # Disposition (attached file)
     )
 
