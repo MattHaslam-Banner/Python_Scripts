@@ -19,6 +19,9 @@ import pandas as pd
 import pyodbc
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+
+
 
 # import time
 
@@ -332,36 +335,47 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("build Excel")
     buffer = build_raw_Excel(dataset)
     logging.info("Send email")
-    send_basic_email_report(buffer=buffer, report_name="Line Report SKU Business")
+
+    filename = f"Line_Report_SKU_Business_{datetime.now():%Y%m%d_%H%M%S}.csv"
+    sas_url = upload_report_to_blob(
+        buffer=buffer,
+        filename=filename
+        )
+    
+    send_URL_email_report(
+        report_name="Line Report SKU Business",
+        sas_url=sas_url
+    )
+    
     del dataset
     del buffer
 
 
-    logging.info("report 1")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
-    dataset = fetch_datalake_query(query)
-    buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
+    # logging.info("report 1")
+    # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+    # dataset = fetch_datalake_query(query)
+    # buffer = build_raw_Excel(dataset)
+    # send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
 
 
 
-    logging.info("report 3")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
-    dataset = fetch_datalake_query(query)
-    buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
+    # logging.info("report 3")
+    # query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
+    # dataset = fetch_datalake_query(query)
+    # buffer = build_raw_Excel(dataset)
+    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
 
-    logging.info("report 4")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
-    dataset = fetch_datalake_query(query)
-    buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
+    # logging.info("report 4")
+    # query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
+    # dataset = fetch_datalake_query(query)
+    # buffer = build_raw_Excel(dataset)
+    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
 
-    logging.info("report 5")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
-    dataset = fetch_datalake_query(query)
-    buffer = build_raw_Excel(dataset)
-    send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
+    # logging.info("report 5")
+    # query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
+    # dataset = fetch_datalake_query(query)
+    # buffer = build_raw_Excel(dataset)
+    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
 
     logging.info("All reports generated successfully.")
     return func.HttpResponse("Test Function")
@@ -461,4 +475,108 @@ def send_basic_email_report(buffer: BytesIO, report_name: str):
         logging.info(f"Email sent! Status Code: {response.status_code}")
     except Exception as e:
         logging.info(f"Error sending email: {str(e)}")
+        raise
+
+
+
+def upload_report_to_blob(buffer: BytesIO, filename: str):
+    """
+    Upload report to blob storage and return SAS URL
+    """
+
+    ##
+    connection_string = get_secret("bannerreportblobsecret")
+    storage_account_name = get_secret("banner-report-blob-name")
+    storage_account_key = get_secret("bannerreportblob")
+
+    container_name = "line-reports"
+
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+
+    blob_client = blob_service_client.get_blob_client(
+        container=container_name,
+        blob=filename
+    )
+
+    buffer.seek(0)
+
+    blob_client.upload_blob(
+        buffer,
+        overwrite=True
+    )
+
+    sas_token = generate_blob_sas(
+        account_name=storage_account_name,
+        container_name=container_name,
+        blob_name=filename,
+        account_key=storage_account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.utcnow() + timedelta(days=7)
+    )
+
+    sas_url = (
+        f"https://{storage_account_name}.blob.core.windows.net/"
+        f"{container_name}/{filename}?{sas_token}"
+    )
+
+    logging.info(f"Uploaded blob: {filename}")
+
+    return sas_url
+
+def send_URL_email_report(report_name: str, sas_url: str):
+    """
+    Send report download link via email.
+
+    :param report_name:
+    :param sas_url:
+    :return:
+    """
+
+    sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
+
+    to_emails = "george.petch@monkhouse.com"
+
+    html_content = f"""
+    <p>Hi,</p>
+
+    <p>Your report <strong>{report_name}</strong> is ready.</p>
+
+    <p>
+        {sas_url}
+            Download {report_name}
+        </a>
+    </p>
+
+    <p>
+        This link will expire in 7 days.
+    </p>
+
+    <p>
+        For any queries please contact Banner IT.
+    </p>
+
+    <p>
+        Thank you.
+    </p>
+    """
+
+    message = Mail(
+        from_email="nasiruddin.patel@banner.co.uk",
+        to_emails=to_emails,
+        subject=report_name,
+        html_content=html_content
+    )
+
+    try:
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+
+        logging.info(
+            f"Email sent successfully. Status Code: {response.status_code}"
+        )
+
+    except Exception as e:
+        logging.error(
+            f"Error sending email: {str(e)}"
+        )
         raise
