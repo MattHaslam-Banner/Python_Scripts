@@ -336,7 +336,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     buffer = build_raw_Excel(dataset)
     logging.info("upload to blob")
 
-    filename = f"Line_Report_SKU_Business_{datetime.now():%Y%m%d_%H%M%S}.csv"
+    filename = f"Line_Report_SKU_Business_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
     logging.info(filename)
     sas_url = upload_report_to_blob(
         buffer=buffer,
