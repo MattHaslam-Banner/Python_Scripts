@@ -329,90 +329,90 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     reports = [
-    {
-        "name": "Line Report SKU Business",
-        "query": """
-            SELECT *
-            FROM [dbo].[Retail_LineReport_Business_ProdColSize]
-            ORDER BY SKU
-        """,
-        "filename_prefix": "Line_Report_SKU_Business"
-    },
-    {
-        "name": "Line Report CP Business",
-        "query": """
-            SELECT *
-            FROM [dbo].[Retail_LineReport_Business_ProdCol]
-            ORDER BY colourSKU
-        """,
-        "filename_prefix": "Line_Report_CP_Business"
-    },
-    {
-        "name": "Line Report SKU North",
-        "query": """
-            SELECT *
-            FROM [dbo].[Retail_LineReport_North_ProdColSize]
-            ORDER BY SKU
-        """,
-        "filename_prefix": "Line_Report_SKU_North"
-    },
-    {
-        "name": "Line Report SKU West",
-        "query": """
-            SELECT *
-            FROM [dbo].[Retail_LineReport_West_ProdColSize]
-            ORDER BY SKU
-        """,
-        "filename_prefix": "Line_Report_SKU_West"
-    },
-    {
-        "name": "Line Report SKU South",
-        "query": """
-            SELECT *
-            FROM [dbo].[Retail_LineReport_South_ProdCol]
-            ORDER BY colourSKU
-        """,
-        "filename_prefix": "Line_Report_SKU_South"
-    }
-]
+        {
+            "name": "Line Report SKU Business",
+            "query": """
+                SELECT *
+                FROM [dbo].[Retail_LineReport_Business_ProdColSize]
+                ORDER BY SKU
+            """,
+            "filename_prefix": "Line_Report_SKU_Business"
+        },
+        {
+            "name": "Line Report CP Business",
+            "query": """
+                SELECT *
+                FROM [dbo].[Retail_LineReport_Business_ProdCol]
+                ORDER BY colourSKU
+            """,
+            "filename_prefix": "Line_Report_CP_Business"
+        },
+        {
+            "name": "Line Report SKU North",
+            "query": """
+                SELECT *
+                FROM [dbo].[Retail_LineReport_North_ProdColSize]
+                ORDER BY SKU
+            """,
+            "filename_prefix": "Line_Report_SKU_North"
+        },
+        {
+            "name": "Line Report SKU West",
+            "query": """
+                SELECT *
+                FROM [dbo].[Retail_LineReport_West_ProdColSize]
+                ORDER BY SKU
+            """,
+            "filename_prefix": "Line_Report_SKU_West"
+        },
+        {
+            "name": "Line Report SKU South",
+            "query": """
+                SELECT *
+                FROM [dbo].[Retail_LineReport_South_ProdCol]
+                ORDER BY colourSKU
+            """,
+            "filename_prefix": "Line_Report_SKU_South"
+        }
+    ]
 
-for report in reports:
-    try:
-        logging.info(f"Starting report: {report['name']}")
+    for report in reports:
+        try:
+            logging.info(f"Starting report: {report['name']}")
 
-        logging.info("Fetch data")
-        dataset = fetch_datalake_query(report["query"])
+            logging.info("Fetch data")
+            dataset = fetch_datalake_query(report["query"])
 
-        logging.info("Build Excel")
-        buffer = build_raw_Excel(dataset)
+            logging.info("Build Excel")
+            buffer = build_raw_Excel(dataset)
 
-        logging.info("Upload to blob")
-        filename = (
-            f"{report['filename_prefix']}_"
-            f"{datetime.datetime.now():%Y%m%d_%H%M%S}.xlsx"
-        )
+            logging.info("Upload to blob")
+            filename = (
+                f"{report['filename_prefix']}_"
+                f"{datetime.datetime.now():%Y%m%d_%H%M%S}.xlsx"
+            )
 
-        logging.info(filename)
+            logging.info(filename)
 
-        sas_url = upload_report_to_blob(
-            buffer=buffer,
-            filename=filename
-        )
+            sas_url = upload_report_to_blob(
+                buffer=buffer,
+                filename=filename
+            )
 
-        logging.info("Send email")
-        send_URL_email_report(
-            report_name=report["name"],
-            sas_url=sas_url
-        )
+            logging.info("Send email")
+            send_URL_email_report(
+                report_name=report["name"],
+                sas_url=sas_url
+            )
 
-        del dataset
-        del buffer
+            del dataset
+            del buffer
 
-        logging.info(f"Completed report: {report['name']}")
+            logging.info(f"Completed report: {report['name']}")
 
-    except Exception as e:
-        logging.exception(
-            f"Failed to process report '{report['name']}': {str(e)}"
+        except Exception as e:
+            logging.exception(
+                f"Failed to process report '{report['name']}': {str(e)}"
        )
 
     # logging.info("report 2")
