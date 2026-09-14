@@ -328,55 +328,139 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="Line_Reports")
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
-    logging.info("report 2")
-    query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
-    logging.info("fetch Data")
-    dataset = fetch_datalake_query(query)
-    logging.info("build Excel")
-    buffer = build_raw_Excel(dataset)
-    logging.info("upload to blob")
+    reports = [
+    {
+        "name": "Line Report SKU Business",
+        "query": """
+            SELECT *
+            FROM [dbo].[Retail_LineReport_Business_ProdColSize]
+            ORDER BY SKU
+        """,
+        "filename_prefix": "Line_Report_SKU_Business"
+    },
+    {
+        "name": "Line Report CP Business",
+        "query": """
+            SELECT *
+            FROM [dbo].[Retail_LineReport_Business_ProdCol]
+            ORDER BY colourSKU
+        """,
+        "filename_prefix": "Line_Report_CP_Business"
+    },
+    {
+        "name": "Line Report SKU North",
+        "query": """
+            SELECT *
+            FROM [dbo].[Retail_LineReport_North_ProdColSize]
+            ORDER BY SKU
+        """,
+        "filename_prefix": "Line_Report_SKU_North"
+    },
+    {
+        "name": "Line Report SKU West",
+        "query": """
+            SELECT *
+            FROM [dbo].[Retail_LineReport_West_ProdColSize]
+            ORDER BY SKU
+        """,
+        "filename_prefix": "Line_Report_SKU_West"
+    },
+    {
+        "name": "Line Report SKU South",
+        "query": """
+            SELECT *
+            FROM [dbo].[Retail_LineReport_South_ProdCol]
+            ORDER BY colourSKU
+        """,
+        "filename_prefix": "Line_Report_SKU_South"
+    }
+]
 
-    filename = f"Line_Report_SKU_Business_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
-    logging.info(filename)
-    sas_url = upload_report_to_blob(
-        buffer=buffer,
-        filename=filename
+for report in reports:
+    try:
+        logging.info(f"Starting report: {report['name']}")
+
+        logging.info("Fetch data")
+        dataset = fetch_datalake_query(report["query"])
+
+        logging.info("Build Excel")
+        buffer = build_raw_Excel(dataset)
+
+        logging.info("Upload to blob")
+        filename = (
+            f"{report['filename_prefix']}_"
+            f"{datetime.datetime.now():%Y%m%d_%H%M%S}.xlsx"
         )
-    
-    send_URL_email_report(
-        report_name="Line Report SKU Business",
-        sas_url=sas_url
-    )
-    
-    del dataset
-    del buffer
 
+        logging.info(filename)
 
-    # logging.info("report 1")
-    # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+        sas_url = upload_report_to_blob(
+            buffer=buffer,
+            filename=filename
+        )
+
+        logging.info("Send email")
+        send_URL_email_report(
+            report_name=report["name"],
+            sas_url=sas_url
+        )
+
+        del dataset
+        del buffer
+
+        logging.info(f"Completed report: {report['name']}")
+
+    except Exception as e:
+        logging.exception(
+            f"Failed to process report '{report['name']}': {str(e)}"
+    #     )
+
+    # logging.info("report 2")
+    # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
+    # logging.info("fetch Data")
     # dataset = fetch_datalake_query(query)
+    # logging.info("build Excel")
     # buffer = build_raw_Excel(dataset)
-    # send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
+    # logging.info("upload to blob")
+    # filename = f"Line_Report_SKU_Business_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
+    # logging.info(filename)
+    # sas_url = upload_report_to_blob(
+    #     buffer=buffer,
+    #     filename=filename
+    #     )
+    # send_URL_email_report(
+    #     report_name="Line Report SKU Business",
+    #     sas_url=sas_url
+    # )
+    # del dataset
+    # del buffer
+
+
+    # # logging.info("report 1")
+    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
+    # # dataset = fetch_datalake_query(query)
+    # # buffer = build_raw_Excel(dataset)
+    # # send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
 
 
 
-    # logging.info("report 3")
-    # query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
-    # dataset = fetch_datalake_query(query)
-    # buffer = build_raw_Excel(dataset)
-    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
+    # # logging.info("report 3")
+    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
+    # # dataset = fetch_datalake_query(query)
+    # # buffer = build_raw_Excel(dataset)
+    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
 
-    # logging.info("report 4")
-    # query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
-    # dataset = fetch_datalake_query(query)
-    # buffer = build_raw_Excel(dataset)
-    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
+    # # logging.info("report 4")
+    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
+    # # dataset = fetch_datalake_query(query)
+    # # buffer = build_raw_Excel(dataset)
+    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
 
-    # logging.info("report 5")
-    # query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
-    # dataset = fetch_datalake_query(query)
-    # buffer = build_raw_Excel(dataset)
-    # send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
+    # # logging.info("report 5")
+    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
+    # # dataset = fetch_datalake_query(query)
+    # # buffer = build_raw_Excel(dataset)
+    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
 
     logging.info("All reports generated successfully.")
     return func.HttpResponse("Test Function")
