@@ -520,7 +520,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
             blob_name=filename,
             account_key=storage_account_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(days=7)
+            expiry=datetime.datetime.utcnow() + datetime.timedelta(days=7)
         )
 
         logging.warning("SAS generated successfully")
