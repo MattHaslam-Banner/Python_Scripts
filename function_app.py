@@ -529,7 +529,7 @@ def send_basic_email_report(buffer: BytesIO, report_name: str):
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
 
     # Create the email object
-    to_emails = "george.petch@monkhouse.com"
+    to_emails = "Jessica.Barber@monkhouse.com"
 
     message = Mail(
         from_email="nasiruddin.patel@banner.co.uk",
