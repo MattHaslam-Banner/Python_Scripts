@@ -634,7 +634,7 @@ def send_URL_email_report(report_name: str, sas_url: str):
 
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
 
-    to_emails = "george.petch@monkhouse.com"
+    to_emails = "Jessica.Barber@monkhouse.com"
 
     html_content = f"""
     <p>Hi,</p>
