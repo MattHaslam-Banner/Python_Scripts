@@ -413,7 +413,7 @@ for report in reports:
     except Exception as e:
         logging.exception(
             f"Failed to process report '{report['name']}': {str(e)}"
-    #     )
+       )
 
     # logging.info("report 2")
     # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
