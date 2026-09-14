@@ -511,15 +511,23 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
         overwrite=True
     )
 
-    logging.warning(f"get sas toekn")
-    sas_token = generate_blob_sas(
-        account_name=storage_account_name,
-        container_name=container_name,
-        blob_name=filename,
-        account_key=storage_account_key,
-        permission=BlobSasPermissions(read=True),
-        expiry=datetime.utcnow() + timedelta(days=7)
-    )
+    try:
+        logging.warning("Generating SAS")
+
+        sas_token = generate_blob_sas(
+            account_name=storage_account_name,
+            container_name=container_name,
+            blob_name=filename,
+            account_key=storage_account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(days=7)
+        )
+
+        logging.warning("SAS generated successfully")
+
+    except Exception as e:
+        logging.exception("SAS generation failed")
+        raise
 
     logging.warning(f"creating sas url")
     sas_url = (
