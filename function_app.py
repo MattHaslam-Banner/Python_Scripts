@@ -520,7 +520,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
         expiry=datetime.utcnow() + timedelta(days=7)
     )
 
-     logging.warning(f"creating sas url")
+    logging.warning(f"creating sas url")
     sas_url = (
         f"https://{storage_account_name}.blob.core.windows.net/"
         f"{container_name}/{filename}?{sas_token}"
