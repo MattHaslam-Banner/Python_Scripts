@@ -334,7 +334,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     dataset = fetch_datalake_query(query)
     logging.info("build Excel")
     buffer = build_raw_Excel(dataset)
-    logging.info("Send email")
+    logging.info("upload to blob")
 
     filename = f"Line_Report_SKU_Business_{datetime.now():%Y%m%d_%H%M%S}.csv"
     sas_url = upload_report_to_blob(
@@ -483,16 +483,20 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
     """
     Upload report to blob storage and return SAS URL
     """
-
+    logging.warning(f"Uploading report to blob storage: {filename}")
     ##
     connection_string = get_secret("bannerreportblobsecret")
     storage_account_name = get_secret("banner-report-blob-name")
     storage_account_key = get_secret("bannerreportblob")
 
     container_name = "line-reports"
+    logging.warning(f"got secrets for blob storage: {container_name}")
 
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
+    logging.warning(f"connected to blob service client")
+
+    logging.warning(f"get blob client ")
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
         blob=filename
@@ -500,11 +504,13 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
 
     buffer.seek(0)
 
+    logging.warning(f"uploading file")
     blob_client.upload_blob(
         buffer,
         overwrite=True
     )
 
+    logging.warning(f"get sas toekn")
     sas_token = generate_blob_sas(
         account_name=storage_account_name,
         container_name=container_name,
@@ -514,6 +520,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
         expiry=datetime.utcnow() + timedelta(days=7)
     )
 
+     logging.warning(f"creating sas url")
     sas_url = (
         f"https://{storage_account_name}.blob.core.windows.net/"
         f"{container_name}/{filename}?{sas_token}"
