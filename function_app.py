@@ -683,8 +683,8 @@ def send_URL_email_report(report_name: str, sas_url: str):
         raise
 
 
-@app.route(route="uploadfile", auth_level=func.AuthLevel.FUNCTION)
-def uploadfile(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="upload_Stock_Take_File", auth_level=func.AuthLevel.FUNCTION)
+def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
 
     return func.HttpResponse(
         "Function reached",
