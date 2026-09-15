@@ -681,3 +681,12 @@ def send_URL_email_report(report_name: str, sas_url: str):
             f"Error sending email: {str(e)}"
         )
         raise
+
+
+@app.route(route="uploadfile", auth_level=func.AuthLevel.FUNCTION)
+def uploadfile(req: func.HttpRequest) -> func.HttpResponse:
+
+    return func.HttpResponse(
+        "Function reached",
+        status_code=200
+    ) 
