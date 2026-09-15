@@ -389,7 +389,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             logging.info("Upload to blob")
             filename = (
                 f"{report['filename_prefix']}_"
-                f"{datetime.datetime.now():%Y%m%d_%H%M%S}.xlsx"
+                f"{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
             )
 
             logging.info(filename)
