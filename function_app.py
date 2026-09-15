@@ -686,7 +686,31 @@ def send_URL_email_report(report_name: str, sas_url: str):
 @app.route(route="upload_Stock_Take_File", auth_level=func.AuthLevel.FUNCTION)
 def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
 
+    file_data = req.get_body()
+    logging.info(f"Received {len(file_data)} bytes")
+
+
+    credential = DefaultAzureCredential()
+
+    blob_service_client = BlobServiceClient(
+        account_url="https://mystorage.blob.core.windows.net",
+        credential=credential
+    )
+
+    container_client = blob_service_client.get_container_client(
+        "reports"
+    )
+
+    blob_client = container_client.get_blob_client(
+        "Report.xlsx"
+    )
+
+    blob_client.upload_blob(
+        file_data,
+        overwrite=True
+    )
+
     return func.HttpResponse(
-        "Function reached",
+        f"Received {len(file_data)} bytes",
         status_code=200
-    ) 
+    )
