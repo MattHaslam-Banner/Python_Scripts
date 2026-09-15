@@ -369,7 +369,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             "name": "Line Report SKU South",
             "query": """
                 SELECT *
-                FROM [dbo].[Retail_LineReport_South_ProdCol]
+                FROM [dbo].[Retail_LineReport_South_ProdColSize]
                 ORDER BY colourSKU
             """,
             "filename_prefix": "Line_Report_SKU_South"
@@ -635,7 +635,7 @@ def send_URL_email_report(report_name: str, sas_url: str):
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
 
     to_emails = "Jessica.Barber@monkhouse.com"
-    to_emails = "george.petch@monkhouse.com"
+    ##to_emails = "george.petch@monkhouse.com"
 
     html_content = f"""
     <p>Hi,</p>
