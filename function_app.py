@@ -22,11 +22,8 @@ from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileT
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 
 
-
 # import time
-
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
-
 
 def set_secret(secret_value: str, secret_name: str):
     """ """
@@ -62,8 +59,6 @@ def read_data():
 
     :return:
     """
-    logging.info(f"Read Data Function called")
-
     # Define your Azure SQL Database connection_db details
     server_name = "ban-powbi-sql-01.database.windows.net"
     database_name = "banner-platform"
@@ -74,12 +69,8 @@ def read_data():
     sqlserver_password = get_secret("ban-powbi-sql-01-password")
     connection_string = f"DRIVER={driver};SERVER={server_name};DATABASE={database_name};UID={sqlserver_username};PWD={sqlserver_password};TrustServerCertificate=yes"
 
-    
-    logging.info(f"pyodbc before")
-    logging.info(f"Connection string: {connection_string}")
     # Generate connection
     connection = pyodbc.connect(connection_string)
-    logging.info(f"pydodbc after")
 
     # Queries for price, stock, and sales
     query_price = "SELECT * FROM clean_swi_txbannerwebplatform.PriceBySchool"
@@ -87,14 +78,12 @@ def read_data():
     query_sales = "SELECT * FROM clean_swi_txbannerwebplatform.SalesBySchool"
     query_recipients = "SELECT * FROM clean_swi_txbannerwebplatform.PurchaseOrderFormRecipients"
 
-    logging.info(f"Read Data Function sql scripts set")
     # Extract dataframes
     df_price = pd.read_sql(query_price, connection)
     df_stock = pd.read_sql(query_stock, connection)
     df_sales = pd.read_sql(query_sales, connection)
     df_recipients = pd.read_sql(query_recipients, connection)
 
-    logging.info(f"data frames extracted")
     # Return Dataframes
     return df_price, df_stock, df_sales, df_recipients
 
@@ -120,9 +109,6 @@ def build_excel(
     df_price_school = df_price[df_price["Customer"] == school_name].copy()
     df_stock_school = df_stock[df_stock["Customer"] == school_name].copy()
     df_sales_school = df_sales[df_sales["Customer"] == school_name].copy()
-
-    # Log shapes
-    logging.info(f"DataFrame sizes for school {school_name}: {df_price_school.shape[0]}, {df_stock_school.shape[0]}, {df_sales_school.shape[0]}")
 
     # Create new sheet
     df_po_school = df_price_school.copy()
@@ -300,8 +286,6 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
     TEST FUNCTION
     """
 
-    logging.info(f"UPDATED01 test function.")
-
     # Read data
     df_price, df_stock, df_sales, df_recipients = read_data()
 
@@ -335,51 +319,51 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     logging.warning(ReportDetails)
 
     reports = [
-        {
-            "name": "Line Report SKU Business",
-            "query": """
-                SELECT *
-                FROM [dbo].[Retail_LineReport_Business_ProdColSize]
-                ORDER BY SKU
-            """,
-            "filename_prefix": "Line_Report_SKU_Business"
-        },
-        {
-            "name": "Line Report CP Business",
-            "query": """
-                SELECT *
-                FROM [dbo].[Retail_LineReport_Business_ProdCol]
-                ORDER BY colourSKU
-            """,
-            "filename_prefix": "Line_Report_CP_Business"
-        },
-        {
-            "name": "Line Report SKU North",
-            "query": """
-                SELECT *
-                FROM [dbo].[Retail_LineReport_North_ProdColSize]
-                ORDER BY SKU
-            """,
-            "filename_prefix": "Line_Report_SKU_North"
-        },
-        {
-            "name": "Line Report SKU West",
-            "query": """
-                SELECT *
-                FROM [dbo].[Retail_LineReport_West_ProdColSize]
-                ORDER BY SKU
-            """,
-            "filename_prefix": "Line_Report_SKU_West"
-        },
-        {
-            "name": "Line Report SKU South",
-            "query": """
-                SELECT *
-                FROM [dbo].[Retail_LineReport_South_ProdColSize]
-                ORDER BY colourSKU
-            """,
-            "filename_prefix": "Line_Report_SKU_South"
-        }
+        # {
+        #     "name": "Line Report SKU Business",
+        #     "query": """
+        #         SELECT *
+        #         FROM [dbo].[Retail_LineReport_Business_ProdColSize]
+        #         ORDER BY SKU
+        #     """,
+        #     "filename_prefix": "Line_Report_SKU_Business"
+        # },
+        # {
+        #     "name": "Line Report CP Business",
+        #     "query": """
+        #         SELECT *
+        #         FROM [dbo].[Retail_LineReport_Business_ProdCol]
+        #         ORDER BY colourSKU
+        #     """,
+        #     "filename_prefix": "Line_Report_CP_Business"
+        # },
+        # {
+        #     "name": "Line Report SKU North",
+        #     "query": """
+        #         SELECT *
+        #         FROM [dbo].[Retail_LineReport_North_ProdColSize]
+        #         ORDER BY SKU
+        #     """,
+        #     "filename_prefix": "Line_Report_SKU_North"
+        # },
+        # {
+        #     "name": "Line Report SKU West",
+        #     "query": """
+        #         SELECT *
+        #         FROM [dbo].[Retail_LineReport_West_ProdColSize]
+        #         ORDER BY SKU
+        #     """,
+        #     "filename_prefix": "Line_Report_SKU_West"
+        # },
+        # {
+        #     "name": "Line Report SKU South",
+        #     "query": """
+        #         SELECT *
+        #         FROM [dbo].[Retail_LineReport_South_ProdColSize]
+        #         ORDER BY colourSKU
+        #     """,
+        #     "filename_prefix": "Line_Report_SKU_South"
+        # }
     ]
 
     for report in reports:
