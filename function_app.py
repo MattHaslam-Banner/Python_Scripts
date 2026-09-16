@@ -331,8 +331,8 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_recipients] WHERE reportBranch = 'lineReports'")
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
 
-    logging.info(f"ReportRecipients: {len(ReportRecipients)}")
-    logging.info(f"ReportDetails: {len(ReportDetails)}")
+    logging.warning(ReportRecipients)
+    logging.warning(ReportDetails)
 
     reports = [
         {
