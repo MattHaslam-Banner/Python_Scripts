@@ -328,6 +328,12 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="Line_Reports")
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
+    ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReports_recipients]")
+    ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReports_config]")
+
+    logging.info(f"ReportRecipients: {len(ReportRecipients)}")
+    logging.info(f"ReportDetails: {len(ReportDetails)}")
+    
     reports = [
         {
             "name": "Line Report SKU Business",
@@ -689,7 +695,10 @@ def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
     file_data = req.get_body()
     logging.info(f"Received {len(file_data)} bytes")
 
-    filename = "test_stock_take_file.xlsx"  # You can modify this to get the filename from the request if needed
+    filename = req.headers.get(
+        "x-filename",
+        "upload.xlsx"
+    )
 
     connection_string = get_secret("bannerreportblobsecret")
     storage_account_name = get_secret("banner-report-blob-name")
@@ -702,12 +711,11 @@ def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
 
     logging.warning(f"connected to blob service client")
 
-    logging.warning(f"get blob client ")
+    logging.warning(f"get blob client")
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
         blob=filename
     )
-
 
     blob_client.upload_blob(
         file_data,
