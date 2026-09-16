@@ -315,8 +315,12 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_recipients] WHERE reportBranch = 'lineReports'")
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
 
-    logging.warning(ReportRecipients)
-    logging.warning(ReportDetails)
+    logging.info("Starting report generation process")  
+    
+    logging.info(ReportRecipients)
+    logging.info(ReportDetails)
+
+    logging.info("Starting report generation process")  
 
     reports = [
         # {
