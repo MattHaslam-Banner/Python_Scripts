@@ -322,8 +322,8 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     for row in ReportDetails.itertuples():
         logging.info(row)
-        logging.info(row.sql)
-        
+        logging.info(row.sql_script)
+
 
  
     logging.info("Starting report generation process")  
