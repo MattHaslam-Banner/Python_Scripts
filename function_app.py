@@ -316,10 +316,14 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
 
     logging.info("Starting report generation process")  
-    
-    logging.info(ReportRecipients)
+
+    logging.info(ReportRecipients.emailRecipients)
     logging.info(ReportDetails)
 
+    for report, SQL, name, Recip in ReportDetails:
+        logging.info(SQL)
+        logging.info(name)
+ 
     logging.info("Starting report generation process")  
 
     reports = [
@@ -408,53 +412,6 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             logging.exception(
                 f"Failed to process report '{report['name']}': {str(e)}"
        )
-
-    # logging.info("report 2")
-    # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdColSize]   order by SKU"
-    # logging.info("fetch Data")
-    # dataset = fetch_datalake_query(query)
-    # logging.info("build Excel")
-    # buffer = build_raw_Excel(dataset)
-    # logging.info("upload to blob")
-    # filename = f"Line_Report_SKU_Business_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
-    # logging.info(filename)
-    # sas_url = upload_report_to_blob(
-    #     buffer=buffer,
-    #     filename=filename
-    #     )
-    # send_URL_email_report(
-    #     report_name="Line Report SKU Business",
-    #     sas_url=sas_url
-    # )
-    # del dataset
-    # del buffer
-
-
-    # # logging.info("report 1")
-    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_Business_ProdCol]   order by colourSKU"
-    # # dataset = fetch_datalake_query(query)
-    # # buffer = build_raw_Excel(dataset)
-    # # send_basic_email_report(buffer=buffer, report_name="Line Report CP Business")
-
-
-
-    # # logging.info("report 3")
-    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_North_ProdColSize]   order by SKU"
-    # # dataset = fetch_datalake_query(query)
-    # # buffer = build_raw_Excel(dataset)
-    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU North")
-
-    # # logging.info("report 4")
-    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_West_ProdColSize]   order by SKU"
-    # # dataset = fetch_datalake_query(query)
-    # # buffer = build_raw_Excel(dataset)
-    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU West")
-
-    # # logging.info("report 5")
-    # # query = "SELECT *   FROM [dbo].[Retail_LineReport_South_ProdCol]   order by colourSKU"
-    # # dataset = fetch_datalake_query(query)
-    # # buffer = build_raw_Excel(dataset)
-    # # send_basic_email_report(buffer=buffer, report_name="Line Report SKU South")
 
     logging.info("All reports generated successfully.")
     return func.HttpResponse("Test Function")
