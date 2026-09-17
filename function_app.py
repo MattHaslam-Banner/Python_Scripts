@@ -331,9 +331,10 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             logging.info("Build Excel")
             buffer = build_raw_Excel(dataset)
 
+            fileprefix = row.Report_Name.replace(" ", "_")
             logging.info("Upload to blob")
             filename = (
-                f"{row.Report_Name}_"
+                f"{fileprefix}_"
                 f"{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
             )
 
