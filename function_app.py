@@ -335,16 +335,16 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             emailLinks.append(tempTuple)
 
             del dataset
-            del buffer
+            buffer.close
+            buffer = None
 
         except Exception as e:
             logging.exception(
                 f"Failed to process report '{row.Report_Name}': {str(e)}"
        )
 
-    send_URL_email_report(
-        reportLinks=emailLinks
-    )
+    if emailLinks:
+        send_URL_email_report(emailLinks)
 
     return func.HttpResponse("Test Function")
 
@@ -403,27 +403,17 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
     """
     Upload report to blob storage and return SAS URL
     """
-    logging.warning(f"Uploading report to blob storage: {filename}")
     ##
     connection_string = get_secret("bannerreportblobsecret")
     storage_account_name = get_secret("banner-report-blob-name")
     storage_account_key = get_secret("bannerreportblob")
-
     container_name = "line-reports"
-    logging.warning(f"got secrets for blob storage: {container_name}")
-
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-
-    logging.warning(f"connected to blob service client")
-
-    logging.warning(f"get blob client ")
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
         blob=filename
     )
-
     buffer.seek(0)
-
     logging.warning(f"uploading file")
     blob_client.upload_blob(
         buffer,
@@ -431,8 +421,6 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
     )
 
     try:
-        logging.warning("Generating SAS")
-
         sas_token = generate_blob_sas(
             account_name=storage_account_name,
             container_name=container_name,
@@ -442,19 +430,14 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
             expiry=datetime.datetime.utcnow() + datetime.timedelta(days=7)
         )
 
-        logging.warning("SAS generated successfully")
-
     except Exception as e:
         logging.exception("SAS generation failed")
         raise
 
-    logging.warning(f"creating sas url")
     sas_url = (
         f"https://{storage_account_name}.blob.core.windows.net/"
         f"{container_name}/{filename}?{sas_token}"
     )
-
-    logging.info(f"Uploaded blob: {filename}")
 
     return sas_url
 
@@ -466,7 +449,6 @@ def send_URL_email_report(reportLinks: []):
     :param sas_url:
     :return:
     """
-
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
 
     to_emails = "Jessica.Barber@monkhouse.com"
@@ -502,7 +484,6 @@ def send_URL_email_report(reportLinks: []):
             Thank you.
         </p>
         """
-
 
     message = Mail(
         from_email="nasiruddin.patel@banner.co.uk",
