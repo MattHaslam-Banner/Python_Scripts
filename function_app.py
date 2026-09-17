@@ -313,11 +313,15 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_recipients] WHERE reportBranch = 'lineReports'")
-    recipient_emails = ReportRecipients.iloc[0]["EmailRecipients"]
-    logging.info(f"Recipient emails: {recipient_emails}")   
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
     emailLinks = []
-    logging.info(f"starting reports")   
+    logging.warning("data collected")   
+
+    recipient_emails = ReportRecipients.iloc[0]["EmailRecipients"]
+    logging.info(f"Recipient emails: {recipient_emails}")   
+    logging.info("starting reports")   
+
+
     for row in ReportDetails.itertuples():
         try:
             dataset = fetch_datalake_query(row.SQL_Script)
