@@ -313,6 +313,8 @@ def funct_build_reports(req: func.HttpRequest) -> func.HttpResponse:
 def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_recipients] WHERE reportBranch = 'lineReports'")
+    recipient_emails = ReportRecipients.iloc[0]["RecipientEmails"]
+    logging.info(f"Recipient emails: {recipient_emails}")   
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
     emailLinks = []
 
@@ -441,7 +443,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
 
     return sas_url
 
-def send_URL_email_report(reportLinks: []):
+def send_URL_email_report(reportLinks: [], emails: str):
     """
     Send report download link via email.
 
@@ -451,8 +453,7 @@ def send_URL_email_report(reportLinks: []):
     """
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
 
-    to_emails = "Jessica.Barber@monkhouse.com"
-    to_emails = "george.petch@monkhouse.com"
+    to_emails = [email.strip() for email in emails.split(";")]
 
     links_html = ""
 
@@ -481,7 +482,7 @@ def send_URL_email_report(reportLinks: []):
         </p>
 
         <p>
-            Thank you.
+            Thank you
         </p>
         """
 
