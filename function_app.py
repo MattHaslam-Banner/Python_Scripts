@@ -342,9 +342,9 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
                 f"Failed to process report '{row.Report_Name}': {str(e)}"
        )
 
-        send_URL_email_report(
-            reportArray=emailLinks
-        )
+    send_URL_email_report(
+        reportLinks=emailLinks
+    )
 
     return func.HttpResponse("Test Function")
 
@@ -507,7 +507,7 @@ def send_URL_email_report(reportLinks: List[Tuple[str, str]]):
     message = Mail(
         from_email="nasiruddin.patel@banner.co.uk",
         to_emails=to_emails,
-        subject=report_name,
+        subject="Monkhouse Line Reports",
         html_content=html_content
     )
 
