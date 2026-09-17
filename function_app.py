@@ -323,7 +323,42 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     for row in ReportDetails.itertuples():
         logging.info(row.Report_Name)
         logging.info(row.SQL_Script)
+        try:
+        
+            logging.info("Fetch data")
+            dataset = fetch_datalake_query(row.SQL_Script)
 
+            logging.info("Build Excel")
+            buffer = build_raw_Excel(dataset)
+
+            logging.info("Upload to blob")
+            filename = (
+                f"{row.Report_Name}_"
+                f"{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
+            )
+
+            logging.info(filename)
+
+            sas_url = upload_report_to_blob(
+                buffer=buffer,
+                filename=filename
+            )
+
+            logging.info("Send email")
+            send_URL_email_report(
+                report_name=row.Report_Name,
+                sas_url=sas_url
+            )
+
+            del dataset
+            del buffer
+
+            logging.info(f"Completed report: {report['name']}")
+
+        except Exception as e:
+            logging.exception(
+                f"Failed to process report '{report['name']}': {str(e)}"
+       )
 
  
     logging.info("Starting report generation process")  
