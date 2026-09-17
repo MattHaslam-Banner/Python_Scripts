@@ -317,7 +317,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Recipient emails: {recipient_emails}")   
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
     emailLinks = []
-
+    logging.info(f"starting reports")   
     for row in ReportDetails.itertuples():
         try:
             dataset = fetch_datalake_query(row.SQL_Script)
