@@ -350,7 +350,8 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
        )
 
     if emailLinks:
-        send_URL_email_report(emailLinks)
+        logging.warning("starting emails")   
+        send_URL_email_report(emailLinks, recipient_emails)
 
     return func.HttpResponse("Test Function")
 
@@ -456,7 +457,7 @@ def send_URL_email_report(reportLinks: [], emails: str):
     :return:
     """
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
-
+    logging.warning(f"emails: {emails}")
     to_emails = [email.strip() for email in emails.split(";")]
     to_emails = "george.petch@monkhouse.com"
 
