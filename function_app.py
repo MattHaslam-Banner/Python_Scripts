@@ -317,12 +317,12 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     logging.info("Starting report generation process")  
 
-    logging.info(ReportRecipients.emailRecipients)
+    logging.info(ReportRecipients)
     logging.info(ReportDetails)
 
-    for report, SQL, name, Recip in ReportDetails:
-        logging.info(SQL)
-        logging.info(name)
+    for report in ReportDetails:
+        logging.info(report)
+
  
     logging.info("Starting report generation process")  
 
