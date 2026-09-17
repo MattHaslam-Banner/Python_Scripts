@@ -351,65 +351,23 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
                 sas_url=sas_url
             )
 
+
+            logging.info("email sent")
             del dataset
             del buffer
 
-            logging.info(f"Completed report: {report['name']}")
+            logging.info(f"Completed report: {row.Report_Name}")
 
         except Exception as e:
             logging.exception(
-                f"Failed to process report '{report['name']}': {str(e)}"
+                f"Failed to process report '{row.Report_Name}': {str(e)}"
        )
 
  
     logging.info("Starting report generation process")  
 
     reports = [
-        # {
-        #     "name": "Line Report SKU Business",
-        #     "query": """
-        #         SELECT *
-        #         FROM [dbo].[Retail_LineReport_Business_ProdColSize]
-        #         ORDER BY SKU
-        #     """,
-        #     "filename_prefix": "Line_Report_SKU_Business"
-        # },
-        # {
-        #     "name": "Line Report CP Business",
-        #     "query": """
-        #         SELECT *
-        #         FROM [dbo].[Retail_LineReport_Business_ProdCol]
-        #         ORDER BY colourSKU
-        #     """,
-        #     "filename_prefix": "Line_Report_CP_Business"
-        # },
-        # {
-        #     "name": "Line Report SKU North",
-        #     "query": """
-        #         SELECT *
-        #         FROM [dbo].[Retail_LineReport_North_ProdColSize]
-        #         ORDER BY SKU
-        #     """,
-        #     "filename_prefix": "Line_Report_SKU_North"
-        # },
-        # {
-        #     "name": "Line Report SKU West",
-        #     "query": """
-        #         SELECT *
-        #         FROM [dbo].[Retail_LineReport_West_ProdColSize]
-        #         ORDER BY SKU
-        #     """,
-        #     "filename_prefix": "Line_Report_SKU_West"
-        # },
-        # {
-        #     "name": "Line Report SKU South",
-        #     "query": """
-        #         SELECT *
-        #         FROM [dbo].[Retail_LineReport_South_ProdColSize]
-        #         ORDER BY colourSKU
-        #     """,
-        #     "filename_prefix": "Line_Report_SKU_South"
-        # }
+
     ]
 
     for report in reports:
