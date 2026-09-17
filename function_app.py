@@ -459,7 +459,8 @@ def send_URL_email_report(reportLinks: [], emails: str):
     sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
     logging.warning(f"emails: {emails}")
     to_emails = [email.strip() for email in emails.split(";")]
-    to_emails = "george.petch@monkhouse.com"
+    ##to_emails = "george.petch@monkhouse.com"
+
 
     links_html = ""
 
