@@ -458,7 +458,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
 
     return sas_url
 
-def send_URL_email_report(reportLinks: List[Tuple[str, str]]):
+def send_URL_email_report(reportLinks: []):
     """
     Send report download link via email.
 
