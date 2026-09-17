@@ -321,7 +321,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(ReportDetails)
 
     for row in ReportDetails.itertuples():
-        logging.info(row)
+        logging.info(row.Report_Name)
         logging.info(row.SQL_Script)
 
 
