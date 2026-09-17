@@ -314,102 +314,38 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
 
     ReportRecipients = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_recipients] WHERE reportBranch = 'lineReports'")
     ReportDetails = fetch_datalake_query("SELECT * FROM [dbo].[azure_autoReport_config] WHERE report_Branch = 'lineReports'")
-
-    logging.info("Starting report generation process")  
-
-    logging.info(ReportRecipients)
-    logging.info(ReportDetails)
+    emailLinks = []
 
     for row in ReportDetails.itertuples():
-        logging.info(row.Report_Name)
-        logging.info(row.SQL_Script)
         try:
-        
-            logging.info("Fetch data")
             dataset = fetch_datalake_query(row.SQL_Script)
-
-            logging.info("Build Excel")
             buffer = build_raw_Excel(dataset)
-
             fileprefix = row.Report_Name.replace(" ", "_")
-            logging.info("Upload to blob")
             filename = (
                 f"{fileprefix}_"
                 f"{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
             )
-
-            logging.info(filename)
-
             sas_url = upload_report_to_blob(
                 buffer=buffer,
                 filename=filename
             )
 
-            logging.info("Send email")
-            send_URL_email_report(
-                report_name=row.Report_Name,
-                sas_url=sas_url
-            )
+            tempTuple = (row.Report_Name, sas_url)
 
+            emailLinks.append(tempTuple)
 
-            logging.info("email sent")
             del dataset
             del buffer
-
-            logging.info(f"Completed report: {row.Report_Name}")
 
         except Exception as e:
             logging.exception(
                 f"Failed to process report '{row.Report_Name}': {str(e)}"
        )
 
- 
-    logging.info("Starting report generation process")  
+        send_URL_email_report(
+            reportArray=emailLinks
+        )
 
-    reports = [
-
-    ]
-
-    for report in reports:
-        try:
-            logging.info(f"Starting report: {report['name']}")
-
-            logging.info("Fetch data")
-            dataset = fetch_datalake_query(report["query"])
-
-            logging.info("Build Excel")
-            buffer = build_raw_Excel(dataset)
-
-            logging.info("Upload to blob")
-            filename = (
-                f"{report['filename_prefix']}_"
-                f"{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
-            )
-
-            logging.info(filename)
-
-            sas_url = upload_report_to_blob(
-                buffer=buffer,
-                filename=filename
-            )
-
-            logging.info("Send email")
-            send_URL_email_report(
-                report_name=report["name"],
-                sas_url=sas_url
-            )
-
-            del dataset
-            del buffer
-
-            logging.info(f"Completed report: {report['name']}")
-
-        except Exception as e:
-            logging.exception(
-                f"Failed to process report '{report['name']}': {str(e)}"
-       )
-
-    logging.info("All reports generated successfully.")
     return func.HttpResponse("Test Function")
 
 def fetch_datalake_query(querystr: str):
@@ -461,54 +397,6 @@ def build_raw_Excel(
     logging.info(f"Excel size: {excel_size_mb:.2f} MB")
 
     return buffer
-
-def send_basic_email_report(buffer: BytesIO, report_name: str):
-    """
-
-    :param buffer:
-    :param recipient:
-    :return:
-    """
-    # Set your API key
-    # API Keys:
-    # sendgrid-api-key -> kiko.rullan@banner.co.uk
-    # sendgrid-api-key-Nov24 -> nasiruddin.patel@banner.co.uk
-    sendgrid_api_key = get_secret("sendgrid-api-key-Nov24")
-
-    # Create the email object
-    to_emails = "Jessica.Barber@monkhouse.com"
-
-    message = Mail(
-        from_email="nasiruddin.patel@banner.co.uk",
-        to_emails=to_emails,
-        subject=f"{report_name}",
-        html_content=f'<p>Hi,</p><p>Please find attached the Line Report Report. For any queries please contact Banner IT. </p><p>Thank you.</p>'
-    )
-
-    # Encode the buffer content to base64
-    buffer_content = buffer.getvalue()
-    encoded_file = base64.b64encode(buffer_content).decode('utf-8')
-
-    # Create an attachment object for the Excel file
-    attachment = Attachment(
-        FileContent(encoded_file),  # Base64 encoded file content
-        FileName(f'{report_name}.csv'),  # Name of the attachment file
-        FileType('text/csv'),  # MIME type for CSV
-        Disposition('attachment')  # Disposition (attached file)
-    )
-
-    # Add attachment to the email
-    message.attachment = attachment
-
-    try:
-        # Send the email
-        sg = SendGridAPIClient(sendgrid_api_key)
-        response = sg.send(message)
-        logging.info(f"Email sent! Status Code: {response.status_code}")
-    except Exception as e:
-        logging.info(f"Error sending email: {str(e)}")
-        raise
-
 
 
 def upload_report_to_blob(buffer: BytesIO, filename: str):
@@ -570,7 +458,7 @@ def upload_report_to_blob(buffer: BytesIO, filename: str):
 
     return sas_url
 
-def send_URL_email_report(report_name: str, sas_url: str):
+def send_URL_email_report(reportLinks: List[Tuple[str, str]]):
     """
     Send report download link via email.
 
@@ -584,29 +472,37 @@ def send_URL_email_report(report_name: str, sas_url: str):
     to_emails = "Jessica.Barber@monkhouse.com"
     to_emails = "george.petch@monkhouse.com"
 
+    links_html = ""
+
+    for report_name, sas_url in reportLinks:
+        links_html += f"""
+        <p>
+            {sas_url}
+                Download {report_name}
+            </a>
+        </p>
+        """
+
     html_content = f"""
-    <p>Hi,</p>
+        <p>Hi,</p>
 
-    <p>Your report <strong>{report_name}</strong> is ready.</p>
+        <p>Your reports are ready.</p>
 
-    <p>
-        {sas_url}
-            Download {report_name}
-        </a>
-    </p>
+        {links_html}
 
-    <p>
-        This link will expire in 7 days.
-    </p>
+        <p>
+            These links will expire in 7 days.
+        </p>
 
-    <p>
-        For any queries please contact Banner IT.
-    </p>
+        <p>
+            For any queries please contact Banner IT.
+        </p>
 
-    <p>
-        Thank you.
-    </p>
-    """
+        <p>
+            Thank you.
+        </p>
+        """
+
 
     message = Mail(
         from_email="nasiruddin.patel@banner.co.uk",
