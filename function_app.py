@@ -318,8 +318,8 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
     logging.warning("data collected")   
 
     recipient_emails = ReportRecipients.iloc[0]["EmailRecipients"]
-    logging.info(f"Recipient emails: {recipient_emails}")   
-    logging.info("starting reports")   
+    logging.warning(f"Recipient emails: {recipient_emails}")   
+    logging.warning("starting reports")   
 
 
     for row in ReportDetails.itertuples():
