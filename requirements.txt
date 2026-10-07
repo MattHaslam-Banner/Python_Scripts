@@ -10,3 +10,5 @@ openpyxl
 pandas
 pyodbc
 sendgrid
+sqlalchemy 
+urllib

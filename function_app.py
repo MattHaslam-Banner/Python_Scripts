@@ -20,6 +20,8 @@ import pyodbc
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+from sqlalchemy import create_engine, text
+import urllib
 
 
 # import time
@@ -515,8 +517,8 @@ def send_URL_email_report(reportLinks: [], emails: str):
         raise
 
 
-@app.route(route="upload_Stock_Take_File", auth_level=func.AuthLevel.FUNCTION)
-def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="upload_Stock_Take_File_to_blob", auth_level=func.AuthLevel.FUNCTION)
+def upload_Stock_Take_File_To_blob(req: func.HttpRequest) -> func.HttpResponse:
 
     file_data = req.get_body()
     logging.info(f"Received {len(file_data)} bytes")
@@ -552,3 +554,169 @@ def upload_Stock_Take_File(req: func.HttpRequest) -> func.HttpResponse:
         f"Received {len(file_data)} bytes",
         status_code=200
     )
+
+
+def upload_file_to_lake(buffer: BytesIO, filename: str):
+    """
+    Upload report to blob storage and return SAS URL
+    """
+
+
+@app.route(route="Retail_product_attributes", auth_level=func.AuthLevel.FUNCTION)
+def Retail_product_attributes(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        # Get uploaded file
+        file_data = req.get_body()
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        UploadCSVtoLake(file_data, False, "Retail_ProductAttributes", "dbo")
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
+
+
+def get_datalake_conn_string(): 
+    # SQL Connection
+    server = "ban-powbi-sql-01.database.windows.net"
+    database = "banner-platform"
+
+    sqlserver_username = get_secret("ban-powbi-sql-01-username")
+    sqlserver_password = get_secret("ban-powbi-sql-01-password")
+
+    conn_str = (
+        f"Driver={{ODBC Driver 18 for SQL Server}};"
+        f"Server=tcp:{server};"
+        f"Database={database};"
+        f"UID={sqlserver_username};"
+        f"PWD={sqlserver_password};"
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
+    )
+
+    return conn_str
+
+
+def get_datalake_connection():
+    conn_str = get_datalake_conn_string()
+    conn = pyodbc.connect(conn_str)
+    return conn
+
+
+def trigger_sproc(sproc: str):
+    logging.warning(f"Triggering sproc: {sproc}")
+    conn = get_datalake_connection()
+    logging.warning(f"Connected to database")
+    cursor = conn.cursor()
+    logging.warning(f"Executing sproc: {sproc}")
+    cursor.execute(f"EXEC {sproc}")
+    logging.warning(f"Executed sproc: {sproc}")
+    conn.commit()
+    conn.close()
+
+def fetch_sproc_data_json_for_VBA(sproc: str):
+    logging.warning(f"Fetching data from sproc: {sproc}")
+    conn = get_datalake_connection()
+    logging.warning(f"Connected to database")
+    cursor = conn.cursor()
+    logging.warning(f"Executing sproc: {sproc}")
+    cursor.execute(f"EXEC {sproc}")
+    logging.warning(f"Executed sproc: {sproc}")
+    # Get column names
+    logging.warning(f"Fetching column names")
+    columns = [col[0] for col in cursor.description]
+    # Get data rows
+    data = []
+    logging.warning(f"Fetching data rows")
+    try:
+        for row in cursor.fetchall():
+            data.append(list(row))
+        result = {
+            "columns": columns,
+            "data": data
+        }
+    except Exception as e:
+        logging.exception("Error fetching data from sproc")
+        result = {
+            "columns": columns,
+            "data": [],
+            "error": str(e)
+        }
+    conn.close()
+    logging.warning(f"complete {sproc}")
+    return result
+
+
+
+def UploadCSVtoLake(filedata: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
+
+    try:
+        try:
+            df = pd.read_csv(
+            BytesIO(filedata),
+            dtype=str,
+            keep_default_na=False,
+            encoding="utf-8"
+            )
+        except UnicodeDecodeError:
+            df = pd.read_csv(
+            BytesIO(filedata),
+            dtype=str,
+            keep_default_na=False,
+            encoding="cp1252"
+            )
+
+        params = urllib.parse.quote_plus(
+            get_datalake_conn_string()
+        )
+
+        engine = create_engine(
+            f"mssql+pyodbc:///?odbc_connect={params}",
+            fast_executemany=True
+        )
+
+        # Optional truncate
+        if delete_existing:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(f"TRUNCATE TABLE {schema}.[{table_name}]")
+                )
+
+        ##Used for error converting blank strings to int (if applicable)
+        df = df.replace('', None)
+
+        # Insert data
+        df.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists="append",
+            index=False,
+            chunksize=5000
+        )
+
+        return func.HttpResponse(
+            f"Uploaded {len(df):,} rows",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
