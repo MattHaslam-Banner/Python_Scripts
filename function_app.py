@@ -589,6 +589,10 @@ def Retail_product_attributes(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+def get_datalake_connection():
+    conn_str = get_datalake_conn_string()
+    conn = pyodbc.connect(conn_str)
+    return conn
 
 def get_datalake_conn_string(): 
     # SQL Connection
@@ -609,12 +613,6 @@ def get_datalake_conn_string():
     )
 
     return conn_str
-
-
-def get_datalake_connection():
-    conn_str = get_datalake_conn_string()
-    conn = pyodbc.connect(conn_str)
-    return conn
 
 
 def trigger_sproc(sproc: str):
