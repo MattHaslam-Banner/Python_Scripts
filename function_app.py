@@ -718,3 +718,30 @@ def UploadCSVtoLake(filedata: bytes, delete_existing: bool, table_name: str, sch
             str(e),
             status_code=500
         )
+
+@app.route(route="PO_Upload_1", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_1(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        # Get uploaded file
+        file_data = req.get_body()
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        UploadCSVtoLake(file_data, False, "Retail_PurchaseOrderStaging", "dbo")
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
