@@ -719,6 +719,64 @@ def UploadCSVtoLake(filedata: bytes, delete_existing: bool, table_name: str, sch
             status_code=500
         )
 
+def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
+
+    try:
+        try:
+            df = pd.read_csv(
+            BytesIO(filedata),
+
+            keep_default_na=False,
+            encoding="utf-8"
+            )
+        except UnicodeDecodeError:
+            df = pd.read_csv(
+            BytesIO(filedata),
+            keep_default_na=False,
+            encoding="cp1252"
+            )
+
+        params = urllib.parse.quote_plus(
+            get_datalake_conn_string()
+        )
+
+        engine = create_engine(
+            f"mssql+pyodbc:///?odbc_connect={params}",
+            fast_executemany=True
+        )
+
+        # Optional truncate
+        if delete_existing:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(f"TRUNCATE TABLE {schema}.[{table_name}]")
+                )
+
+        ##Used for error converting blank strings to int (if applicable)
+        df = df.replace('', None)
+
+        # Insert data
+        df.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists="append",
+            index=False,
+            chunksize=5000
+        )
+
+        return func.HttpResponse(
+            f"Uploaded {len(df):,} rows",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
+
 @app.route(route="PO_Upload_1", auth_level=func.AuthLevel.FUNCTION)
 def PO_Upload_1(req: func.HttpRequest) -> func.HttpResponse:
 
@@ -732,7 +790,7 @@ def PO_Upload_1(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        UploadCSVtoLake(file_data, False, "Retail_PurchaseOrderStaging", "dbo")
+        UploadCSVtoLakeAutoTypeSet(file_data, False, "Retail_PurchaseOrderStaging", "dbo")
 
         return func.HttpResponse(
             f"Uploaded {len(file_data)} bytes",
