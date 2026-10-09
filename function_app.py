@@ -807,14 +807,22 @@ def PO_Upload_1_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="PO_Upload_2_Fetch_Staging_Test", auth_level=func.AuthLevel.FUNCTION)
 def PO_Upload_2_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
 
-    logging.warning(f"Fetching data from sproc: dbo.[Retail_PurchaseOrders_1_staging_test]")
-    result = fetch_sproc_data_json_for_VBA("dbo.[Retail_PurchaseOrders_1_staging_test]")
+    try: 
+        logging.warning(f"Fetching data from sproc: dbo.[Retail_PurchaseOrders_1_staging_test]")
 
-    return func.HttpResponse(
-        json.dumps(result, default=str),
-        mimetype="application/json",
-        status_code=200
-    )
+        result = fetch_sproc_data_json_for_VBA("dbo.[Retail_PurchaseOrders_1_staging_test]")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+    except Exception as e:
+        logging.exception(str(e))
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
 
 
 
