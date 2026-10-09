@@ -22,7 +22,7 @@ from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileT
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 from sqlalchemy import create_engine, text
 import urllib
-
+import json
 
 # import time
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
