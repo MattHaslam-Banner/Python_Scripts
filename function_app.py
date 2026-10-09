@@ -777,8 +777,8 @@ def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_nam
             status_code=500
         )
 
-@app.route(route="PO_Upload_1", auth_level=func.AuthLevel.FUNCTION)
-def PO_Upload_1(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="PO_Upload_1_upload_staging_test", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_1_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         # Get uploaded file
@@ -803,3 +803,49 @@ def PO_Upload_1(req: func.HttpRequest) -> func.HttpResponse:
             str(e),
             status_code=500
         )
+
+@app.route(route="PO_Upload_2_Fetch_Staging_Test", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_2_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
+
+    logging.warning(f"Fetching data from sproc: dbo.[dbo.Retail_PurchaseOrders_1_staging_test]")
+    result = fetch_sproc_data_json_for_VBA("dbo.[dbo.Retail_PurchaseOrders_1_staging_test]")
+
+    return func.HttpResponse(
+        json.dumps(result, default=str),
+        mimetype="application/json",
+        status_code=200
+    )
+
+
+
+def fetch_sproc_data_json_for_VBA(sproc: str):
+    logging.warning(f"Fetching data from sproc: {sproc}")
+    conn = get_datalake_connection()
+    logging.warning(f"Connected to database")
+    cursor = conn.cursor()
+    logging.warning(f"Executing sproc: {sproc}")
+    cursor.execute(f"EXEC {sproc}")
+    logging.warning(f"Executed sproc: {sproc}")
+    # Get column names
+    logging.warning(f"Fetching column names")
+    columns = [col[0] for col in cursor.description]
+    # Get data rows
+    data = []
+    logging.warning(f"Fetching data rows")
+    try:
+        for row in cursor.fetchall():
+            data.append(list(row))
+        result = {
+            "columns": columns,
+            "data": data
+        }
+    except Exception as e:
+        logging.exception("Error fetching data from sproc")
+        result = {
+            "columns": columns,
+            "data": [],
+            "error": str(e)
+        }
+    conn.close()
+    logging.warning(f"complete {sproc}")
+    return result
