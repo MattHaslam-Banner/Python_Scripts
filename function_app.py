@@ -790,13 +790,10 @@ def PO_Upload_1_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        UploadCSVtoLakeAutoTypeSet(file_data, False, "Retail_PurchaseOrderStaging", "dbo")
-
-        result = fetch_sproc_data_json_for_VBA("dbo.[Retail_PurchaseOrders_1_staging_test]")
+        UploadCSVtoLakeAutoTypeSet(file_data, True, "Retail_PurchaseOrderStaging", "dbo")
 
         return func.HttpResponse(
-            json.dumps(result, default=str),
-            mimetype="application/json",
+            f"Uploaded {len(file_data)} bytes",
             status_code=200
         )
 
