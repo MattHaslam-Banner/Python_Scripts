@@ -343,7 +343,7 @@ def Line_Reports(req: func.HttpRequest) -> func.HttpResponse:
             emailLinks.append(tempTuple)
 
             del dataset
-            buffer.close
+            buffer.close()
             buffer = None
 
         except Exception as e:
@@ -614,6 +614,26 @@ def get_datalake_conn_string():
 
     return conn_str
 
+def get_datalake_conn_string_BO_Live(): 
+    # SQL Connection
+    server = "ban-powbi-sql-01.database.windows.net"
+    database = "bo_live"
+
+    sqlserver_username = get_secret("ban-powbi-sql-01-username")
+    sqlserver_password = get_secret("ban-powbi-sql-01-password")
+
+    conn_str = (
+        f"Driver={{ODBC Driver 18 for SQL Server}};"
+        f"Server=tcp:{server};"
+        f"Database={database};"
+        f"UID={sqlserver_username};"
+        f"PWD={sqlserver_password};"
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
+    )
+
+    return conn_str
+
 
 def trigger_sproc(sproc: str):
     logging.warning(f"Triggering sproc: {sproc}")
@@ -857,3 +877,89 @@ def fetch_sproc_data_json_for_VBA(sproc: str):
     conn.close()
     logging.warning(f"complete {sproc}")
     return result
+
+@app.route(route="Replen_Upload", auth_level=func.AuthLevel.FUNCTION)
+def Replen_Upload(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        # Get uploaded file
+        file_data = req.get_body()
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        UploadCSVtoLakeBOLive(file_data, True, "store_replen_master", "dbo")
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
+
+def UploadCSVtoLakeBOLive(filedata: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
+
+    try:
+        try:
+            df = pd.read_csv(
+            BytesIO(filedata),
+            dtype=str,
+            keep_default_na=False,
+            encoding="utf-8"
+            )
+        except UnicodeDecodeError:
+            df = pd.read_csv(
+            BytesIO(filedata),
+            dtype=str,
+            keep_default_na=False,
+            encoding="cp1252"
+            )
+
+        params = urllib.parse.quote_plus(
+            get_datalake_conn_string_BO_Live()
+        )
+
+        engine = create_engine(
+            f"mssql+pyodbc:///?odbc_connect={params}",
+            fast_executemany=True
+        )
+
+        # Optional truncate
+        if delete_existing:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(f"TRUNCATE TABLE {schema}.[{table_name}]")
+                )
+
+        ##Used for error converting blank strings to int (if applicable)
+        df = df.replace('', None)
+
+        # Insert data
+        df.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists="append",
+            index=False,
+            chunksize=5000
+        )
+
+        return func.HttpResponse(
+            f"Uploaded {len(df):,} rows",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
