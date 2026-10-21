@@ -962,21 +962,38 @@ def UploadCSVtoLakeBOLive(filedata: bytes, delete_existing: bool, table_name: st
 @app.route(route="fetchStoreSales", auth_level=func.AuthLevel.FUNCTION)
 def fetchStoreByWeekByLocation(req: func.HttpRequest) -> func.HttpResponse:
 
-    body = req.get_json()
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse(
+            "Request body must be valid JSON",
+            status_code=400
+        )
+
     store_code = body.get("storeCode")
+
+    if not store_code:
+        return func.HttpResponse(
+            "storeCode is required",
+            status_code=400
+        )
+
     logging.warning(f"Fetching store sales for store code: {store_code}")
-    logging.warning(f"dbo.retail_fetchStoreWeeklySales @location_name='{store_code}'")
-    try:    
-        result = fetch_sproc_data_json_for_VBA(f"dbo.retail_fetchStoreWeeklySales @location_name='{store_code}'")
+
+    try:
+        result = fetch_sproc_data_json_for_VBA(
+            f"dbo.retail_fetchStoreWeeklySales @location_name='{store_code}'"
+        )
 
         return func.HttpResponse(
             json.dumps(result, default=str),
             mimetype="application/json",
             status_code=200
         )
-    except Exception as e:
+
+    except Exception:
         logging.exception("Fetch failed")
         return func.HttpResponse(
-            str(e),
+            "Internal server error",
             status_code=500
         )
