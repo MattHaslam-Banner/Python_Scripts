@@ -10,4 +10,7 @@ openpyxl
 pandas
 pyodbc
 sendgrid
-sqlalchemy 
+sqlalchemy
+csv
+logging
+io

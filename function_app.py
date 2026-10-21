@@ -997,3 +997,70 @@ def fetchStoreByWeekByLocation(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+
+
+def fetch_sproc_data_csv(sproc: str):
+
+    logging.warning(f"Fetching data from sproc: {sproc}")
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"EXEC {sproc}")
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # headers
+    columns = [col[0] for col in cursor.description]
+    writer.writerow(columns)
+
+    # data
+    for row in cursor:
+        writer.writerow(row)
+
+    conn.close()
+
+    return output.getvalue()
+
+@app.route(route="fetchStoreByWeekByLocationCSV", auth_level=func.AuthLevel.FUNCTION)
+def fetchStoreByWeekByLocationCSV(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse(
+            "Request body must be valid JSON",
+            status_code=400
+        )
+
+    store_code = body.get("storeCode")
+
+    if not store_code:
+        return func.HttpResponse(
+            "storeCode is required",
+            status_code=400
+        )
+
+    try:
+
+        csv_data = fetch_sproc_data_csv(
+            f"dbo.retail_fetchStoreWeeklySales @location_name='{store_code}'"
+        )
+
+        return func.HttpResponse(
+            csv_data,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                f'attachment; filename="{store_code}_sales.csv"'
+            },
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
