@@ -11,6 +11,3 @@ pandas
 pyodbc
 sendgrid
 sqlalchemy
-csv
-logging
-io
