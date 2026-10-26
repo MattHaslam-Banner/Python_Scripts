@@ -799,6 +799,75 @@ def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_nam
             status_code=500
         )
 
+
+def UploadCSVtoLakeCustomTypeSet(file_data: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
+    logging.warning(f"Uploading CSV to Lake: {table_name} in schema {schema}")
+    # Read raw CSV with no header
+    raw_df = pd.read_csv(
+        io.BytesIO(file_data),
+        header=None,
+        dtype=str,
+        keep_default_na=False
+    )
+
+    # Row 1 = column names
+    column_names = raw_df.iloc[0].tolist()
+
+    # Row 2 = datatypes
+    column_types = raw_df.iloc[1].tolist()
+
+    # Row 3 onwards = data
+    df = raw_df.iloc[2:].copy()
+
+    # Apply headers
+    df.columns = column_names
+
+    # Reset row index
+    df.reset_index(drop=True, inplace=True)
+
+    # Apply datatypes
+    for col, datatype in zip(column_names, column_types):
+
+        datatype = str(datatype).strip().upper()
+
+        if datatype == "INT":
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        elif datatype == "FLOAT":
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        elif datatype == "DECIMAL":
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        elif datatype == "DATE":
+            df[col] = pd.to_datetime(
+                df[col],
+                dayfirst=True,
+                errors="coerce"
+            ).dt.date
+
+        elif datatype == "DATETIME":
+            df[col] = pd.to_datetime(
+                df[col],
+                dayfirst=True,
+                errors="coerce"
+            )
+
+        else:
+            df[col] = df[col].astype(str)
+
+    print(df.dtypes)
+
+    df.to_sql(
+        table_name,
+        engine,
+        schema=schema,
+        if_exists="append",
+        index=False,
+        method=None
+    )
+
+
 @app.route(route="PO_Upload_1a_upload_staging_test", auth_level=func.AuthLevel.FUNCTION)
 def PO_Upload_1a_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
 
@@ -859,7 +928,7 @@ def PO_Upload_2a_upload_approved(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        UploadCSVtoLakeAutoTypeSet(file_data, False, "Retail_PurchaseOrders_2_Approved", "dbo")
+        UploadCSVtoLakeCustomTypeSet(file_data, False, "Retail_PurchaseOrders_2_Approved", "dbo")
 
         return func.HttpResponse(
             f"Uploaded {len(file_data)} bytes",
