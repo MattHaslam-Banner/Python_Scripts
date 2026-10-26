@@ -739,7 +739,7 @@ def UploadCSVtoLake(filedata: bytes, delete_existing: bool, table_name: str, sch
         )
 
 def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
-
+    logging.warning(f"Uploading CSV to Lake: {table_name} in schema {schema}")
     try:
         try:
             df = pd.read_csv(
