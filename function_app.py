@@ -845,7 +845,7 @@ def PO_Upload_1b_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="PO_Upload_2a_upload_approved", auth_level=func.AuthLevel.FUNCTION)
 def PO_Upload_2a_upload_approved(req: func.HttpRequest) -> func.HttpResponse:
-
+    logging.warning("Uploading approved purchase orders")
     try:
         # Get uploaded file
         file_data = req.get_body()
