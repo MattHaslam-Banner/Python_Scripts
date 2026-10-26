@@ -796,8 +796,8 @@ def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_nam
             status_code=500
         )
 
-@app.route(route="PO_Upload_1_upload_staging_test", auth_level=func.AuthLevel.FUNCTION)
-def PO_Upload_1_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="PO_Upload_1a_upload_staging_test", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_1a_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         # Get uploaded file
@@ -823,8 +823,8 @@ def PO_Upload_1_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
-@app.route(route="PO_Upload_2_Fetch_Staging_Test", auth_level=func.AuthLevel.FUNCTION)
-def PO_Upload_2_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="PO_Upload_1b_Fetch_Staging_Test", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_1b_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
 
     try: 
         logging.warning(f"Fetching data from sproc: dbo.[Retail_PurchaseOrders_1_staging_test]")
@@ -838,6 +838,33 @@ def PO_Upload_2_Fetch_Staging_Test(req: func.HttpRequest) -> func.HttpResponse:
         )
     except Exception as e:
         logging.exception(str(e))
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
+
+@app.route(route="PO_Upload_2a_upload_approved", auth_level=func.AuthLevel.FUNCTION)
+def PO_Upload_2a_upload_approved(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        # Get uploaded file
+        file_data = req.get_body()
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        UploadCSVtoLakeAutoTypeSet(file_data, False, "Retail_PurchaseOrders_2_Approved", "dbo")
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
         return func.HttpResponse(
             str(e),
             status_code=500
