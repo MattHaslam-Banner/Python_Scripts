@@ -899,7 +899,7 @@ def PO_Upload_1a_upload_staging_test(req: func.HttpRequest) -> func.HttpResponse
                 status_code=400
             )
 
-        UploadCSVtoLakeAutoTypeSet(file_data, True, "Retail_PurchaseOrder_1_Staging", "dbo")
+        UploadCSVtoLakeCustomTypeSet(file_data, True, "Retail_PurchaseOrder_1_Staging", "dbo")
 
         return func.HttpResponse(
             f"Uploaded {len(file_data)} bytes",
