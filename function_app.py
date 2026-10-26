@@ -774,6 +774,9 @@ def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_nam
         ##Used for error converting blank strings to int (if applicable)
         df = df.replace('', None)
 
+        for col in df.columns:
+            logging.warning(f"Column: {col}, Data Type: {df[col].dtype}")
+
         # Insert data
         df.to_sql(
             table_name,
