@@ -801,6 +801,24 @@ def UploadCSVtoLakeAutoTypeSet(filedata: bytes, delete_existing: bool, table_nam
 
 
 def UploadCSVtoLakeCustomTypeSet(file_data: bytes, delete_existing: bool, table_name: str, schema: str = "dbo") -> func.HttpResponse:
+
+
+    params = urllib.parse.quote_plus(
+        get_datalake_conn_string()
+    )
+
+    engine = create_engine(
+        f"mssql+pyodbc:///?odbc_connect={params}",
+        fast_executemany=True
+    )
+
+    # Optional truncate
+    if delete_existing:
+        with engine.begin() as conn:
+            conn.execute(
+                text(f"TRUNCATE TABLE {schema}.[{table_name}]")
+            )
+
     logging.warning(f"Uploading CSV to Lake: {table_name} in schema {schema}")
     # Read raw CSV with no header
     raw_df = pd.read_csv(
