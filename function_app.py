@@ -1213,9 +1213,9 @@ def data_Upload_SC_LeadTimeMatrix(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
-@app.route(route="data_Upload_SC_LeadTimeMatrix", auth_level=func.AuthLevel.FUNCTION)
-def data_Upload_SC_LeadTimeMatrix(req: func.HttpRequest) -> func.HttpResponse:
-    logging.warning("Uploading supply chain lead time matrix")
+@app.route(route="data_Upload_SC_MOQs", auth_level=func.AuthLevel.FUNCTION)
+def data_Upload_SC_MOQs(req: func.HttpRequest) -> func.HttpResponse:
+    logging.warning("Uploading supply chain MOQs")
     try:
         # Get uploaded file
         file_data = req.get_body()
