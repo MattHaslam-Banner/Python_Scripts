@@ -821,12 +821,23 @@ def UploadCSVtoLakeCustomTypeSet(file_data: bytes, delete_existing: bool, table_
 
     logging.warning(f"Uploading CSV to Lake: {table_name} in schema {schema}")
     # Read raw CSV with no header
-    raw_df = pd.read_csv(
-        io.BytesIO(file_data),
+    try: 
+        raw_df = pd.read_csv(
+            io.BytesIO(file_data),
+            header=None,
+            dtype=str,
+            keep_default_na=False,
+            encoding="utf-8"
+        )
+
+    except UnicodeDecodeError:
+        raw_df = pd.read_csv(
+        BytesIO(file_data),
         header=None,
         dtype=str,
-        keep_default_na=False
-    )
+        keep_default_na=False,
+        encoding="cp1252"
+        )
 
     # Row 1 = column names
     column_names = raw_df.iloc[0].tolist()
