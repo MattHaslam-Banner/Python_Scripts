@@ -1251,8 +1251,8 @@ def data_Upload_SC_MOQs(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
-@app.route(route="data_Upload_Location_unit_Capacity", auth_level=func.AuthLevel.FUNCTION)
-def data_Upload_Location_unit_Capacity(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="data_Upload_Location_Capacity", auth_level=func.AuthLevel.FUNCTION)
+def data_Upload_Location_Capacity(req: func.HttpRequest) -> func.HttpResponse:
     logging.warning("Uploading location unit capacity data")
     try:
         # Get uploaded file
@@ -1264,7 +1264,7 @@ def data_Upload_Location_unit_Capacity(req: func.HttpRequest) -> func.HttpRespon
                 status_code=400
             )
 
-        UploadCSVtoLakeCustomTypeSet(file_data, True, "Retail_SupplyChain_Location_unit_Capacity", "dbo")
+        UploadCSVtoLakeCustomTypeSet(file_data, True, "Retail_SupplyChain_Location_Capacity", "dbo")
 
         return func.HttpResponse(
             f"Uploaded {len(file_data)} bytes",
