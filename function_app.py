@@ -1338,13 +1338,17 @@ def data_Upload_Location_Budget_Capacity(req: func.HttpRequest) -> func.HttpResp
 def fetchStockAgeReport(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(
+        result = fetch_view_data_csv(
             f"dbo.retail_age_of_stock_report"
         )
 
         return func.HttpResponse(
-            json.dumps(result, default=str),
-            mimetype="application/json",
+            result,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                f'attachment; filename="age_of_stock    .csv"'
+            },
             status_code=200
         )
 
@@ -1354,3 +1358,27 @@ def fetchStockAgeReport(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+
+def fetch_view_data_csv(View: str):
+
+    logging.warning(f"Fetching data from view: {View}")
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT * FROM {View}")
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # headers
+    columns = [col[0] for col in cursor.description]
+    writer.writerow(columns)
+
+    # data
+    for row in cursor:
+        writer.writerow(row)
+
+    conn.close()
+
+    return output.getvalue()
