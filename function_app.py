@@ -974,15 +974,10 @@ def PO_Upload_2a_upload_approved(req: func.HttpRequest) -> func.HttpResponse:
 
 
 def fetch_sproc_data_json_for_VBA(sproc: str):
-    logging.warning(f"Fetching data from sproc: {sproc}")
+
     conn = get_datalake_connection()
-    logging.warning(f"Connected to database")
     cursor = conn.cursor()
-    logging.warning(f"Executing sproc: {sproc}")
     cursor.execute(f"EXEC {sproc}")
-    logging.warning(f"Executed sproc: {sproc}")
-    # Get column names
-    logging.warning(f"Fetching column names")
     columns = [col[0] for col in cursor.description]
     # Get data rows
     data = []
@@ -1003,6 +998,40 @@ def fetch_sproc_data_json_for_VBA(sproc: str):
         }
     conn.close()
     logging.warning(f"complete {sproc}")
+    return result
+
+def fetch_view_data_json_for_VBA(view_name: str):
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT * FROM {view_name}")
+
+    columns = [col[0] for col in cursor.description]
+
+    data = []
+    logging.warning(f"Fetching data from view {view_name}")
+
+    try:
+        for row in cursor.fetchall():
+            data.append(list(row))
+
+        result = {
+            "columns": columns,
+            "data": data
+        }
+
+    except Exception as e:
+        logging.exception("Error fetching data from view")
+        result = {
+            "columns": columns,
+            "data": [],
+            "error": str(e)
+        }
+
+    conn.close()
+    logging.warning(f"Complete {view_name}")
+
     return result
 
 @app.route(route="Replen_Upload", auth_level=func.AuthLevel.FUNCTION)
@@ -1305,3 +1334,23 @@ def data_Upload_Location_Budget_Capacity(req: func.HttpRequest) -> func.HttpResp
             status_code=500
         )
 
+@app.route(route="fetchStockAgeReport", auth_level=func.AuthLevel.FUNCTION)
+def fetchStockAgeReport(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_view_data_json_for_VBA(
+            f"dbo.retail_fetchStoreWeeklySales"
+        )
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
