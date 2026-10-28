@@ -1339,7 +1339,7 @@ def fetchStockAgeReport(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         result = fetch_view_data_json_for_VBA(
-            f"dbo.retail_fetchStoreWeeklySales"
+            f"dbo.retail_age_of_stock_report"
         )
 
         return func.HttpResponse(
