@@ -1411,3 +1411,30 @@ def data_upload_custom_attribute(req: func.HttpRequest) -> func.HttpResponse:
             str(e),
             status_code=500
         )
+
+@app.route(route="fetch_custom_attributes", auth_level=func.AuthLevel.FUNCTION)
+def fetch_custom_attributes(req: func.HttpRequest) -> func.HttpResponse:
+
+    trigger_sproc("dbo.Build_Retail_Custom_Product_Attributes_Pivot")
+
+    try:
+        result = fetch_view_data_csv(
+            f"dbo.Retail_Custom_Product_Attributes_Pivot"
+        )
+
+        return func.HttpResponse(
+            result,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                f'attachment; filename="age_of_stock    .csv"'
+            },
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
