@@ -1440,7 +1440,7 @@ def fetch_custom_attributes(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 @app.route(
-    route="data_upload_custom_attribute",
+    route="data_upload_to_lake_generic",
     auth_level=func.AuthLevel.FUNCTION
 )
 def data_upload_to_lake_generic(
