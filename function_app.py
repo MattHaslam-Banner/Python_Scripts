@@ -1438,3 +1438,52 @@ def fetch_custom_attributes(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+
+@app.route(
+    route="data_upload_custom_attribute",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def data_upload_to_lake_generic(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    logging.warning("generic uploader")
+
+    try:
+        file_data = req.get_body()
+
+        table_name = req.headers.get("x-table-name")
+        schema_name = req.headers.get("x-schema-name")
+        truncate_table = req.headers.get("x-truncate_table")
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        if not table_name:
+            return func.HttpResponse(
+                "No table name supplied",
+                status_code=400
+            )
+
+        UploadCSVtoLakeCustomTypeSet(
+            file_data,
+            truncate_table,
+            table_name,
+            schema_name
+        )
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes to {schema_name}.{table_name}",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
