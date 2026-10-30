@@ -854,6 +854,10 @@ def UploadCSVtoLakeCustomTypeSet(file_data: bytes, delete_existing: bool, table_
     # Reset row index
     df.reset_index(drop=True, inplace=True)
 
+    for col in df.columns:
+        max_len = df[col].astype(str).str.len().max()
+        print(f"{col}: {max_len}")
+
     # Apply datatypes
     for col, datatype in zip(column_names, column_types):
 
@@ -1440,13 +1444,8 @@ def fetch_custom_attributes(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 @app.route(
-    route="data_upload_to_lake_generic",
-    auth_level=func.AuthLevel.FUNCTION
-)
-def data_upload_to_lake_generic(
-    req: func.HttpRequest
-) -> func.HttpResponse:
-
+    route="data_upload_to_lake_generic", auth_level=func.AuthLevel.FUNCTION)
+def data_upload_to_lake_generic(    req: func.HttpRequest) -> func.HttpResponse:
     logging.warning("generic uploader")
 
     try:
