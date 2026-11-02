@@ -1351,7 +1351,7 @@ def fetchStockAgeReport(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="text/csv",
             headers={
                 "Content-Disposition":
-                f'attachment; filename="age_of_stock    .csv"'
+                f'attachment; filename="age_of_stock.csv"'
             },
             status_code=200
         )
@@ -1486,3 +1486,304 @@ def data_upload_to_lake_generic(    req: func.HttpRequest) -> func.HttpResponse:
             str(e),
             status_code=500
         )
+
+@app.route(route="data_upload_to_lake_generic", auth_level=func.AuthLevel.FUNCTION)
+def data_upload_to_lake_generic_with_upsert(req: func.HttpRequest) -> func.HttpResponse:
+    logging.warning("generic uploader")
+
+    try:
+        file_data = req.get_body()
+
+        table_name = req.headers.get("x-table-name")
+        schema_name = req.headers.get("x-schema-name")
+        truncate_table = req.headers.get("x-truncate_table")
+        key_columns = req.headers.get("x-key-columns")
+
+        if not file_data:
+            return func.HttpResponse(
+                "No file received",
+                status_code=400
+            )
+
+        if not table_name:
+            return func.HttpResponse(
+                "No table name supplied",
+                status_code=400
+            )
+
+        UploadCSVtoLakeCustomTypeSetWithUpsert(
+            file_data,
+            truncate_table,
+            table_name,
+            key_columns,
+            schema_name
+        )
+
+        return func.HttpResponse(
+            f"Uploaded {len(file_data)} bytes to {schema_name}.{table_name}",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.exception("Upload failed")
+
+        return func.HttpResponse(
+            str(e),
+            status_code=500
+        )
+
+def UploadCSVtoLakeCustomTypeSetWithUpsert(
+    file_data: bytes,
+    delete_existing: bool,
+    table_name: str,
+    key_columns: list[str],
+    schema: str = "dbo"
+):
+
+    params = urllib.parse.quote_plus(
+        get_datalake_conn_string()
+    )
+
+    engine = create_engine(
+        f"mssql+pyodbc:///?odbc_connect={params}",
+        fast_executemany=True
+    )
+
+    # Optional truncate
+    if delete_existing:
+        with engine.begin() as conn:
+            conn.execute(
+                text(f"TRUNCATE TABLE {schema}.[{table_name}]")
+            )
+
+    logging.warning(
+        f"Uploading CSV to Lake: {table_name} in schema {schema}"
+    )
+
+    # -------------------------------
+    # Read CSV
+    # -------------------------------
+
+    try:
+        raw_df = pd.read_csv(
+            io.BytesIO(file_data),
+            header=None,
+            dtype=str,
+            keep_default_na=False,
+            encoding="utf-8"
+        )
+
+    except UnicodeDecodeError:
+
+        raw_df = pd.read_csv(
+            io.BytesIO(file_data),
+            header=None,
+            dtype=str,
+            keep_default_na=False,
+            encoding="cp1252"
+        )
+
+    # Row 1 = Column Names
+    column_names = raw_df.iloc[0].tolist()
+
+    # Row 2 = Datatypes
+    column_types = raw_df.iloc[1].tolist()
+
+    # Row 3+ = Data
+    df = raw_df.iloc[2:].copy()
+
+    df.columns = column_names
+
+    df.reset_index(
+        drop=True,
+        inplace=True
+    )
+
+    # -------------------------------
+    # Apply Datatypes
+    # -------------------------------
+
+    for col, datatype in zip(column_names, column_types):
+
+        datatype = str(datatype).strip().upper()
+
+        if datatype == "INT":
+
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            )
+
+        elif datatype in ("FLOAT", "DECIMAL"):
+
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            )
+
+        elif datatype == "DATE":
+
+            df[col] = pd.to_datetime(
+                df[col],
+                dayfirst=True,
+                errors="coerce"
+            ).dt.date
+
+        elif datatype == "DATETIME":
+
+            df[col] = pd.to_datetime(
+                df[col],
+                dayfirst=True,
+                errors="coerce"
+            )
+
+        else:
+
+            df[col] = df[col].astype(str)
+
+    logging.warning(
+        f"Processed {len(df)} rows"
+    )
+
+    # -------------------------------
+    # Build Existing Key Set
+    # -------------------------------
+
+    key_select = ", ".join(
+        [f"[{col}]" for col in key_columns]
+    )
+
+    existing_keys_df = pd.read_sql(
+        f"""
+        SELECT {key_select}
+        FROM {schema}.[{table_name}]
+        """,
+        engine
+    )
+
+    existing_keys = set(
+        existing_keys_df[key_columns]
+        .fillna("")
+        .astype(str)
+        .agg("|".join, axis=1)
+    )
+
+    # -------------------------------
+    # Generate Composite Key
+    # -------------------------------
+
+    df["_upsert_key"] = (
+        df[key_columns]
+        .fillna("")
+        .astype(str)
+        .agg("|".join, axis=1)
+    )
+
+    # -------------------------------
+    # Split Updates / Inserts
+    # -------------------------------
+
+    inserts = df[
+        ~df["_upsert_key"].isin(existing_keys)
+    ].copy()
+
+    updates = df[
+        df["_upsert_key"].isin(existing_keys)
+    ].copy()
+
+    logging.warning(
+        f"Found {len(inserts)} inserts and {len(updates)} updates"
+    )
+
+    # -------------------------------
+    # INSERT NEW RECORDS
+    # -------------------------------
+
+    if not inserts.empty:
+
+        inserts = inserts.drop(
+            columns=["_upsert_key"],
+            errors="ignore"
+        )
+
+        inserts.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists="append",
+            index=False,
+            method=None
+        )
+
+        logging.warning(
+            f"Inserted {len(inserts)} rows"
+        )
+
+    # -------------------------------
+    # UPDATE EXISTING RECORDS
+    # -------------------------------
+
+    if not updates.empty:
+
+        update_columns = [
+            col
+            for col in updates.columns
+            if col not in key_columns
+            and col != "_upsert_key"
+        ]
+
+        set_clause = ", ".join(
+            [
+                f"[{col}] = :{col}"
+                for col in update_columns
+            ]
+        )
+
+        where_clause = " AND ".join(
+            [
+                f"[{col}] = :{col}"
+                for col in key_columns
+            ]
+        )
+
+        update_sql = text(
+            f"""
+            UPDATE {schema}.[{table_name}]
+            SET {set_clause}
+            WHERE {where_clause}
+            """
+        )
+
+        with engine.begin() as conn:
+
+            for _, row in updates.iterrows():
+
+                params = {}
+
+                for col in updates.columns:
+
+                    if col == "_upsert_key":
+                        continue
+
+                    value = row[col]
+
+                    if pd.isna(value):
+                        value = None
+
+                    params[col] = value
+
+                conn.execute(
+                    update_sql,
+                    params
+                )
+
+        logging.warning(
+            f"Updated {len(updates)} rows"
+        )
+
+    return {
+        "table": table_name,
+        "rows_processed": len(df),
+        "rows_inserted": len(inserts),
+        "rows_updated": len(updates)
+    }
