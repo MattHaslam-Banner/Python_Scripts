@@ -1825,3 +1825,93 @@ def fetch_generic_view_data_CSV(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+
+@app.route(route="fetch_TC_orders_csv", auth_level=func.AuthLevel.FUNCTION)
+def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        conn = get_datalake_connection()
+        cursor = conn.cursor()
+
+        sql = """
+        SELECT TOP (1000)
+              [order_id]
+            , [order_id_num]
+            , [order_number]
+            , CAST([created_at] AS VARCHAR(50))     AS [created_at]
+            , CAST([cancelled_at] AS VARCHAR(50))   AS [cancelled_at]
+            , [currency_code]
+            , [financial_status]
+            , [fulfillment_status]
+            , [source_name]
+            , [is_test]
+            , [customer_first_name]
+            , [customer_last_name]
+            , [shipping_name]
+            , [billing_name]
+            , [order_line]
+            , [line_item_id]
+            , [title]
+            , [sku]
+            , [variant_title]
+            , [vendor]
+            , [product_id]
+            , [product_id_num]
+            , [variant_id]
+            , [variant_id_num]
+            , [option1_name]
+            , [option1_value]
+            , [option2_name]
+            , [option2_value]
+            , [option3_name]
+            , [option3_value]
+            , [quantity]
+            , [current_quantity]
+            , [fulfillable_quantity]
+            , [taxable]
+            , [requires_shipping]
+            , [unit_price]
+            , [discounted_unit_price]
+            , [total_discount]
+            , [line_value_before_discount]
+            , [line_value_after_discount]
+            , [price_currency]
+        FROM [TC_View].[Orders]
+        """
+
+        cursor.execute(sql)
+
+        import csv
+        import io
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        headers = [column[0] for column in cursor.description]
+        writer.writerow(headers)
+
+        for row in cursor.fetchall():
+            writer.writerow(row)
+
+        csv_data = output.getvalue()
+
+        cursor.close()
+        conn.close()
+
+        return func.HttpResponse(
+            csv_data,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                    'attachment; filename="Orders.csv"'
+            },
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed for TC_View.Orders")
+
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
