@@ -1787,3 +1787,41 @@ def UploadCSVtoLakeCustomTypeSetWithUpsert(
         "rows_inserted": len(inserts),
         "rows_updated": len(updates)
     }
+
+@app.route(
+    route="fetch_generic_view_data_CSV",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetch_generic_view_data_CSV(req: func.HttpRequest) -> func.HttpResponse:
+
+    view_name = req.headers.get("x-view-name")
+    schema_name = req.headers.get("x-schema-name")
+
+    if not view_name or not schema_name:
+        return func.HttpResponse(
+            "Missing x-view-name or x-schema-name header",
+            status_code=400
+        )
+
+    try:
+        view = f"{schema_name}.{view_name}"
+
+        result = fetch_view_data_csv(view)
+
+        return func.HttpResponse(
+            result,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                f'attachment; filename="{view_name}.csv"'
+            },
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception(f"Fetch failed for view {schema_name}.{view_name}")
+
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
