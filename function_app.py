@@ -1834,7 +1834,7 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
         cursor = conn.cursor()
 
         sql = """
-        SELECT TOP (1000)
+        SELECT 
               [order_id]
             , [order_id_num]
             , [order_number]
