@@ -1977,3 +1977,23 @@ def fetchGTMRProductSizeDetail(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
+@app.route(route="fetchGTMRProductColours", auth_level=func.AuthLevel.FUNCTION)
+def fetchGTMRProductColours(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_Colours")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
+
+
