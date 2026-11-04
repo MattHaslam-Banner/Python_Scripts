@@ -1922,7 +1922,7 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
 def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Data")
+        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_View")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
@@ -1936,3 +1936,4 @@ def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+
