@@ -1443,6 +1443,8 @@ def fetch_custom_attributes(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+
+
 @app.route(
     route="data_upload_to_lake_generic", auth_level=func.AuthLevel.FUNCTION)
 def data_upload_to_lake_generic(    req: func.HttpRequest) -> func.HttpResponse:
@@ -1911,6 +1913,25 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
     except Exception:
         logging.exception("Fetch failed for TC_View.Orders")
 
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
+
+@app.route(route="fetchGTMRProducts", auth_level=func.AuthLevel.FUNCTION)
+def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Data")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
         return func.HttpResponse(
             "Internal server error",
             status_code=500
