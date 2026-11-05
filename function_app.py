@@ -1918,7 +1918,7 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
 def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_View")
+        result = fetch_view_data_json(f"dbo.Retail_GTMR_Product_View")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
@@ -1937,7 +1937,7 @@ def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
 def fetchGTMRProductGroups(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_Groups")
+        result = fetch_view_data_json(f"dbo.Retail_GTMR_Product_Groups")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
@@ -1957,7 +1957,7 @@ def fetchGTMRProductGroups(req: func.HttpRequest) -> func.HttpResponse:
 def fetchGTMRProductSizeDetail(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_Size_Detail")
+        result = fetch_view_data_json(f"dbo.Retail_GTMR_Product_Size_Detail")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
