@@ -1918,7 +1918,7 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
 def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json(f"dbo.Retail_GTMR_Product_View")
+        result = fetch_view_data_json(f"dbo.Retail_GTMR_ProductSelectionData")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
