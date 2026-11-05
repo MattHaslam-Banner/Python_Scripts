@@ -1977,11 +1977,11 @@ def fetchGTMRProductSizeDetail(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-@app.route(route="fetchGTMRProductColours", auth_level=func.AuthLevel.FUNCTION)
-def fetchGTMRProductColours(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="NSP_fetch_options", auth_level=func.AuthLevel.FUNCTION)
+def NSP_fetch_options(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_view_data_json_for_VBA(f"dbo.Retail_GTMR_Product_Colours")
+        result = fetch_view_data_json(f"dbo.Retail_NSP_options")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
@@ -1995,5 +1995,38 @@ def fetchGTMRProductColours(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
+        
+def fetch_view_data_json(view_name: str):
 
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT * FROM {view_name}")
+
+    columns = [col[0] for col in cursor.description]
+
+    data = []
+    logging.warning(f"Fetching data from view {view_name}")
+
+    try:
+        for row in cursor.fetchall():
+            data.append(list(row))
+
+        result = {
+            "columns": columns,
+            "data": data
+        }
+
+    except Exception as e:
+        logging.exception("Error fetching data from view")
+        result = {
+            "columns": columns,
+            "data": [],
+            "error": str(e)
+        }
+
+    conn.close()
+    logging.warning(f"Complete {view_name}")
+
+    return result
 
