@@ -1995,7 +1995,52 @@ def NSP_fetch_options(req: func.HttpRequest) -> func.HttpResponse:
             "Internal server error",
             status_code=500
         )
-        
+
+@app.route(route="NSP_Upload_School_Info", auth_level=func.AuthLevel.FUNCTION)
+def NSP_Upload_School_Info(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        # Raw request body
+        body = req.get_body().decode("utf-8")
+
+        logging.info("=== NSP Upload Received ===")
+        logging.info(f"Method: {req.method}")
+        logging.info(f"Headers: {dict(req.headers)}")
+        logging.info(f"Params: {dict(req.params)}")
+        logging.info(f"Raw Body: {body}")
+
+        # Attempt to parse JSON
+        try:
+            payload = req.get_json()
+
+            logging.info("=== JSON Payload ===")
+            logging.info(json.dumps(payload, indent=2))
+
+        except ValueError:
+            payload = {"raw_body": body}
+            logging.warning("Request body is not valid JSON")
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "message": "Payload received",
+                "received": payload
+            }),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+        logging.exception("NSP upload failed")
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "error": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
 def fetch_view_data_json(view_name: str):
 
     conn = get_datalake_connection()
