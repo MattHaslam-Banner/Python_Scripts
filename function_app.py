@@ -640,13 +640,9 @@ def get_datalake_conn_string_BO_Live():
 
 
 def trigger_sproc(sproc: str):
-    logging.warning(f"Triggering sproc: {sproc}")
     conn = get_datalake_connection()
-    logging.warning(f"Connected to database")
     cursor = conn.cursor()
-    logging.warning(f"Executing sproc: {sproc}")
     cursor.execute(f"EXEC {sproc}")
-    logging.warning(f"Executed sproc: {sproc}")
     conn.commit()
     conn.close()
 
@@ -1976,6 +1972,90 @@ def fetchGTMRProductSizeDetail(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+
+@app.route(
+    route="NSP_Create_New_NSP",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def NSP_Create_New_NSP(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+
+        result = execute_sproc(
+            "dbo.Retail_NSP_Create_New_NSP"
+        )
+
+        return func.HttpResponse(
+            json.dumps(
+                {
+                    "success": True,
+                    "data": result[0] if result else None
+                },
+                default=str
+            ),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception("NSP creation failed")
+
+        return func.HttpResponse(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": str(ex)
+                }
+            ),
+            mimetype="application/json",
+            status_code=500
+        )
+
+def execute_sproc(
+    sproc_name: str,
+    params: tuple = None
+):
+    """
+    Execute a stored procedure and return any result set.
+
+    Example:
+        execute_sproc("dbo.Retail_NSP_Create_New_NSP")
+        execute_sproc("dbo.MySproc", ("ABC", 123))
+    """
+
+    conn = get_datalake_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        if params:
+            placeholders = ",".join(["?"] * len(params))
+            sql = f"EXEC {sproc_name} {placeholders}"
+            cursor.execute(sql, params)
+        else:
+            cursor.execute(f"EXEC {sproc_name}")
+
+        results = []
+
+        if cursor.description:
+            columns = [col[0] for col in cursor.description]
+
+            for row in cursor.fetchall():
+                results.append(
+                    dict(zip(columns, row))
+                )
+
+        conn.commit()
+
+        return results
+
+    except Exception:
+        logging.exception(f"Failed executing {sproc_name}")
+        raise
+
+    finally:
+        conn.close()
 
 @app.route(route="NSP_fetch_options", auth_level=func.AuthLevel.FUNCTION)
 def NSP_fetch_options(req: func.HttpRequest) -> func.HttpResponse:
