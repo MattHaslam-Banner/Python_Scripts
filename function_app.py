@@ -2005,28 +2005,28 @@ def fetch_view_data_json(view_name: str):
 
     columns = [col[0] for col in cursor.description]
 
-    data = []
-    logging.warning(f"Fetching data from view {view_name}")
-
     try:
-        for row in cursor.fetchall():
-            data.append(list(row))
+
+        rows = cursor.fetchall()
+
+        data = [
+            dict(zip(columns, row))
+            for row in rows
+        ]
 
         result = {
-            "columns": columns,
             "data": data
         }
 
     except Exception as e:
+
         logging.exception("Error fetching data from view")
+
         result = {
-            "columns": columns,
             "data": [],
             "error": str(e)
         }
 
     conn.close()
-    logging.warning(f"Complete {view_name}")
 
     return result
-
