@@ -2174,3 +2174,27 @@ def fetch_view_data_json(view_name: str):
     conn.close()
 
     return result
+
+
+@app.route(route="email_ingest", auth_level=func.AuthLevel.FUNCTION)
+def email_ingest(req: func.HttpRequest):
+
+    data = req.get_json()
+
+    logging.info(f"Subject: {data['subject']}")
+    logging.info(f"From: {data['sender']}")
+
+    for attachment in data.get("attachments", []):
+        filename = attachment["fileName"]
+
+        content = base64.b64decode(
+            attachment["contentBase64"]
+        )
+
+        with open(f"/tmp/{filename}", "wb") as f:
+            f.write(content)
+
+    return func.HttpResponse(
+        json.dumps({"success": True}),
+        mimetype="application/json"
+    )
