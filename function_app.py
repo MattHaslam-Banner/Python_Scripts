@@ -28,6 +28,7 @@ import io
 import logging
 import tempfile
 
+from openai import AzureOpenAI
 
 # import time
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
@@ -2201,144 +2202,143 @@ def email_ingest(req: func.HttpRequest):
     )
 
 
-from openai import AzureOpenAI
 
-@app.route(route="email_ingest_ai", auth_level=func.AuthLevel.FUNCTION)
-def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
+# @app.route(route="email_ingest_ai", auth_level=func.AuthLevel.FUNCTION)
+# def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
-    try:
+#     try:
 
-        # Parse payload
-        data = req.get_json()
+#         # Parse payload
+#         data = req.get_json()
 
-        subject = data.get("subject", "")
-        sender = data.get("sender", "")
-        body = data.get("body", "")
-        attachments = data.get("attachments", [])
+#         subject = data.get("subject", "")
+#         sender = data.get("sender", "")
+#         body = data.get("body", "")
+#         attachments = data.get("attachments", [])
 
-        logging.info(f"Subject: {subject}")
-        logging.info(f"Sender : {sender}")
-        logging.info(f"Attachments: {len(attachments)}")
+#         logging.info(f"Subject: {subject}")
+#         logging.info(f"Sender : {sender}")
+#         logging.info(f"Attachments: {len(attachments)}")
 
-        # Save attachments
-        saved_files = []
+#         # Save attachments
+#         saved_files = []
 
-        for attachment in attachments:
+#         for attachment in attachments:
 
-            filename = attachment.get("fileName")
-            content_base64 = attachment.get("contentBase64")
+#             filename = attachment.get("fileName")
+#             content_base64 = attachment.get("contentBase64")
 
-            if not filename or not content_base64:
-                continue
+#             if not filename or not content_base64:
+#                 continue
 
-            file_bytes = base64.b64decode(content_base64)
+#             file_bytes = base64.b64decode(content_base64)
 
-            file_path = os.path.join(
-                tempfile.gettempdir(),
-                filename
-            )
+#             file_path = os.path.join(
+#                 tempfile.gettempdir(),
+#                 filename
+#             )
 
-            with open(file_path, "wb") as f:
-                f.write(file_bytes)
+#             with open(file_path, "wb") as f:
+#                 f.write(file_bytes)
 
-            saved_files.append(
-                {
-                    "filename": filename,
-                    "path": file_path,
-                    "size": len(file_bytes)
-                }
-            )
+#             saved_files.append(
+#                 {
+#                     "filename": filename,
+#                     "path": file_path,
+#                     "size": len(file_bytes)
+#                 }
+#             )
 
-        # Azure OpenAI / Foundry Client
-        client = AzureOpenAI(
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
-            api_version="2024-10-21",
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
-        )
+#         # Azure OpenAI / Foundry Client
+#         client = AzureOpenAI(
+#             api_key=os.environ["AZURE_OPENAI_API_KEY"],
+#             api_version="2024-10-21",
+#             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+#         )
 
-        ai_response = client.chat.completions.create(
-            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": """
-                    You are an email processing assistant.
+#         ai_response = client.chat.completions.create(
+#             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+#             temperature=0,
+#             messages=[
+#                 {
+#                     "role": "system",
+#                     "content": """
+#                     You are an email processing assistant.
 
-                    Return VALID JSON ONLY.
+#                     Return VALID JSON ONLY.
 
-                    Extract:
+#                     Extract:
 
-                    {
-                        "intent": "",
-                        "customer_name": "",
-                        "school_name": "",
-                        "order_numbers": [],
-                        "action_required": "",
-                        "priority": "",
-                        "summary": ""
-                    }
+#                     {
+#                         "intent": "",
+#                         "customer_name": "",
+#                         "school_name": "",
+#                         "order_numbers": [],
+#                         "action_required": "",
+#                         "priority": "",
+#                         "summary": ""
+#                     }
 
-                    Priority must be:
-                    Low, Medium, High or Critical.
-                    """
-                                    },
-                                    {
-                                        "role": "user",
-                                        "content": f"""
-                    EMAIL DETAILS
+#                     Priority must be:
+#                     Low, Medium, High or Critical.
+#                     """
+#                                     },
+#                                     {
+#                                         "role": "user",
+#                                         "content": f"""
+#                     EMAIL DETAILS
 
-                    From:
-                    {sender}
+#                     From:
+#                     {sender}
 
-                    Subject:
-                    {subject}
+#                     Subject:
+#                     {subject}
 
-                    Body:
-                    {body}
-                    """
-                }
-            ]
-        )
+#                     Body:
+#                     {body}
+#                     """
+#                 }
+#             ]
+#         )
 
-        ai_result = ai_response.choices[0].message.content
+#         ai_result = ai_response.choices[0].message.content
 
-        try:
-            parsed_result = json.loads(ai_result)
-        except Exception:
-            parsed_result = {
-                "raw_response": ai_result
-            }
+#         try:
+#             parsed_result = json.loads(ai_result)
+#         except Exception:
+#             parsed_result = {
+#                 "raw_response": ai_result
+#             }
 
-        return func.HttpResponse(
-            json.dumps(
-                {
-                    "success": True,
-                    "email": {
-                        "sender": sender,
-                        "subject": subject,
-                        "attachment_count": len(saved_files)
-                    },
-                    "attachments": saved_files,
-                    "ai_result": parsed_result
-                },
-                default=str
-            ),
-            mimetype="application/json",
-            status_code=200
-        )
+#         return func.HttpResponse(
+#             json.dumps(
+#                 {
+#                     "success": True,
+#                     "email": {
+#                         "sender": sender,
+#                         "subject": subject,
+#                         "attachment_count": len(saved_files)
+#                     },
+#                     "attachments": saved_files,
+#                     "ai_result": parsed_result
+#                 },
+#                 default=str
+#             ),
+#             mimetype="application/json",
+#             status_code=200
+#         )
 
-    except Exception as ex:
+#     except Exception as ex:
 
-        logging.exception("Email processing failed")
+#         logging.exception("Email processing failed")
 
-        return func.HttpResponse(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": str(ex)
-                }
-            ),
-            mimetype="application/json",
-            status_code=500
-        )
+#         return func.HttpResponse(
+#             json.dumps(
+#                 {
+#                     "success": False,
+#                     "error": str(ex)
+#                 }
+#             ),
+#             mimetype="application/json",
+#             status_code=500
+#         )
