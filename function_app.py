@@ -2258,7 +2258,6 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         ai_response = client.chat.completions.create(
             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
-            temperature=0,
             messages=[
                 {
                     "role": "system",
