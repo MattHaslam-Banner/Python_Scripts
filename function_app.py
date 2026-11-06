@@ -2251,7 +2251,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         # Azure OpenAI / Foundry Client
         client = AzureOpenAI(
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_key=os.environ["AZURE_OPENAI_KEY"],
             api_version="2024-10-21",
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
         )
@@ -2336,7 +2336,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps(
                 {
                     "success": False,
-                    "error": str(ex)
+                    "error": str(ex),
+                    "error_type": type(ex).__name__
                 }
             ),
             mimetype="application/json",
