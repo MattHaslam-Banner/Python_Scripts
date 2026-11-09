@@ -2271,12 +2271,16 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                     {
                         "intent": "",
                         "customer_name": "",
+                        "business_name": "",
+                        "SQL_search_business_name": "",
                         "school_name": "",
                         "order_numbers": [],
                         "action_required": "",
                         "priority": "",
                         "summary": ""
                     }
+
+                    for the sql_search_business_name, create a minimal string to maximise search likelihood and remove any special characters or punctuation.
 
                     Priority must be:
                     Low, Medium, High or Critical.
