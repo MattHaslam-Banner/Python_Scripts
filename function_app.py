@@ -1993,6 +1993,25 @@ def fetchGTMRProductColour(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+@app.route(route="fetchGTMRPlainItems", auth_level=func.AuthLevel.FUNCTION)
+def fetchGTMRPlainItems(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_view_data_json(f"dbo.Retail_GTMR_Plain_Items")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
+
 
 @app.route(
     route="NSP_Create_New_NSP",
