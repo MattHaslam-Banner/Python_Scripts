@@ -2309,6 +2309,16 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                 "raw_response": ai_result
             }
 
+        customer_name = parsed_result.get("customer_name")
+
+        logging.info(f"Extracted customer name: {customer_name}")
+
+        customer_search_data = fetch_sproc_data_json(
+            f"dbo.breakneck_customers @customer='{customer_name}'"
+        )
+
+        logging.info(f"Customer search result: {customer_search_data}")
+
         return func.HttpResponse(
             json.dumps(
                 {
@@ -2342,3 +2352,38 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
             status_code=500
         )
+
+def fetch_sproc_data_json(sproc_name: str):
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"EXEC {sproc_name}")
+
+    columns = [col[0] for col in cursor.description]
+
+    try:
+
+        rows = cursor.fetchall()
+
+        data = [
+            dict(zip(columns, row))
+            for row in rows
+        ]
+
+        result = {
+            "data": data
+        }
+
+    except Exception as e:
+
+        logging.exception("Error fetching data from sproc")
+
+        result = {
+            "data": [],
+            "error": str(e)
+        }
+
+    conn.close()
+
+    return result
