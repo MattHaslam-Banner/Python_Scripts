@@ -2336,6 +2336,9 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         customer_name = parsed_result.get("business_name")
         customer_sql_name = parsed_result.get("SQL_search_business_name")
+        delivery_address = parsed_result.get("delivery_address")
+        invoice_address = parsed_result.get("invoice_address")
+
         likeness_score = 95
 
         logging.info(f"Extracted delivery address: {delivery_address}")
