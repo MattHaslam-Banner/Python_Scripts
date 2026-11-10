@@ -2340,12 +2340,12 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f"Extracted customer name: {customer_name}")
 
         customer_search_data = fetch_sproc_data_json(
-           f"dbo.breakneck_customers @customer='{customer_sql_name}' @likeness={likeness_score}"
+           f"dbo.breakneck_customers @customer='{customer_sql_name}' @Likeness={likeness_score}"
         )
         logging.info(f"Extracted customer name: {customer_sql_name}")
 
         customer_search_data = fetch_sproc_data_json(
-            f"dbo.breakneck_customers @customer='{customer_sql_name}' @likeness={likeness_score}"
+            f"dbo.breakneck_customers @customer='{customer_sql_name}' @Likeness={likeness_score}"
         )
 
         logging.info(f"Customer search result: {customer_search_data}")
