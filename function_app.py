@@ -2292,6 +2292,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                         "customer_name": "",
                         "business_name": "",
                         "SQL_search_business_name": "",
+                        "delivery_address": "",
+                        invoice_address": "",
                         "school_name": "",
                         "order_numbers": [],
                         "action_required": "",
@@ -2336,7 +2338,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         customer_sql_name = parsed_result.get("SQL_search_business_name")
         likeness_score = 95
 
-
+        logging.info(f"Extracted delivery address: {delivery_address}")
+        logging.info(f"Extracted invoice address: {invoice_address}")
         logging.info(f"Extracted customer name: {customer_name}")
 
         customer_search_data = fetch_sproc_data_json(
@@ -2349,6 +2352,45 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         )
 
         logging.info(f"Customer search result: {customer_search_data}")
+
+        ai_response = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    You are an email processing assistant.
+
+                    Return VALID JSON ONLY.
+
+                    
+
+                    "selected_Business_Name": "",
+                    "selected_business_invoice_address": ""
+
+                    using email data info :
+                    {parsed_result}
+
+                    and previous order data :
+                    {customer_search_data}
+
+                    """
+
+
+                }
+            ]
+        )
+
+        ai_result_2 = ai_response.choices[0].message.content
+
+        try:
+            parsed_result_2 = json.loads(ai_result_2)
+        except Exception:
+            parsed_result_2 = {
+                "raw_response": ai_result_2
+            }
+
+        
 
         return func.HttpResponse(
             json.dumps(
