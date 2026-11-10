@@ -2441,6 +2441,10 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"AI result 3: {parsed_result_3}")
 
+        size_product_search_data = fetch_sproc_data_json(
+            f"dbo.breakneck_products_2 @items='{parsed_result_3}'"
+        )
+
         return func.HttpResponse(
             json.dumps(
                 {
