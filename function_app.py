@@ -2406,7 +2406,29 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Product search result: {product_search_data}")
 
-        
+        ai_response = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""
+                    You are an email processing assistant.
+
+                    Return VALID JSON ONLY.
+
+                    Identify the most likely products from the previous order data.
+
+                    match the schools via the special instructions, and return the product codes and colour codes.
+
+                    Email data:
+                    {json.dumps(parsed_result)}
+
+                    Previous product data:
+                    {json.dumps(product_search_data)}
+                    """
+                }
+            ]
+        )
 
         return func.HttpResponse(
             json.dumps(
