@@ -2412,13 +2412,37 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                 {
                     "role": "system",
                     "content": f"""
-                    You are an email processing assistant.
+                    You are an order matching assistant.
 
                     Return VALID JSON ONLY.
 
-                    Identify the most likely products from the previous order data.
+                    Do not return markdown.
+                    Do not return explanations.
+                    Do not return code fences.
+                    Do not return text before or after the JSON.
 
-                    match the schools via the special instructions and the products via the descriptions and colours ways, and return a list of the most likely products and their colours
+                    Use ONLY this structure:
+
+                    {{
+                        "products": [
+                            {{
+                                "product": "PRODUCT_CODE",
+                                "colour_code": "COLOUR_CODE",
+                                "quantity": 1
+                            }}
+                        ]
+                    }}
+
+                    Rules:
+
+                    - product must be the matched product code from the supplied data.
+                    - colour_code must be the matched colour code from the supplied data.
+                    - quantity must be an integer.
+                    - If quantity is not stated in the email use 1.
+                    - Return only products that are confidently matched.
+                    - Do not invent product codes.
+                    - Do not invent colour codes.
+                    - All products must come from the supplied product data.
 
                     Email data:
                     {json.dumps(parsed_result)}
@@ -2455,13 +2479,13 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                     You are an email processing assistant.
 
                     Return VALID JSON ONLY.
-                    like this:
-                    'school_name': "",
-                    'school_match_note': '',
+
+                    
+                    Return a json list with the parsed results, the parsed_results_2 for the selected customer, the selected products, and finally select the sizes from the product_size_data for the selected products in a final json list.
+
+                    :
                     'products': [{'product': '', 'description': '', 'colour_code': '', 'colour': '', 'quantity': 21}]
 
-
-                    Return a json list with the parsed results, the parsed_results_2 for the selected customer, the selected products, and finally select the sizes from the product_size_data for the selected products in a final json list.
 
                     Email data:
                     {json.dumps(parsed_result)}
