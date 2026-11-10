@@ -2441,9 +2441,46 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"AI result 3: {parsed_result_3}")
 
-        size_product_search_data = fetch_sproc_data_json(
-            f"dbo.breakneck_products_2 @items='{parsed_result_3}'"
+        product_size_data = fetch_sproc_data_json_explicit(
+            "EXEC dbo.breakneck_build_order_context @items=?",
+            [json.dumps(parsed_result_3)]
         )
+
+        ai_response = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""
+                    You are an email processing assistant.
+
+                    Return VALID JSON ONLY.
+
+                    Return a json list with the parsed results, the parsed_results_2 for the selected customer, the selected products, and finally select the sizes from the product_size_data for the selected products in a final json list.
+
+                    Email data:
+                    {json.dumps(parsed_result)}
+
+                    Selected Products:  
+                    {json.dumps(parsed_result_3)}
+
+                    product size data:
+                    {json.dumps(product_size_data)}
+                    """
+                }
+            ]
+        )
+
+        ai_response_3 = ai_response.choices[0].message.content
+
+        try:
+            parsed_result_3 = json.loads(ai_response_3)
+        except Exception:
+            parsed_result_3 = {
+                "raw_response": ai_response_3
+            }    
+
+
 
         return func.HttpResponse(
             json.dumps(
@@ -2485,6 +2522,41 @@ def fetch_sproc_data_json(sproc_name: str):
     cursor = conn.cursor()
 
     cursor.execute(f"EXEC {sproc_name}")
+
+    columns = [col[0] for col in cursor.description]
+
+    try:
+
+        rows = cursor.fetchall()
+
+        data = [
+            dict(zip(columns, row))
+            for row in rows
+        ]
+
+        result = {
+            "data": data
+        }
+
+    except Exception as e:
+
+        logging.exception("Error fetching data from sproc")
+
+        result = {
+            "data": [],
+            "error": str(e)
+        }
+
+    conn.close()
+
+    return result
+
+def fetch_sproc_data_json_explicit(sproc_name: str):
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"{sproc_name}")
 
     columns = [col[0] for col in cursor.description]
 
