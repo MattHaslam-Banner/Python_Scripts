@@ -2363,7 +2363,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
                     Return VALID JSON ONLY.
 
-                    
+                    identify the most likely customer from the previous order data and fill in the following fields:
 
                     "selected_Business_Name": "",
                     "selected_business_invoice_address": ""
@@ -2390,7 +2390,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                 "raw_response": ai_result_2
             }
 
-        
+        logging.info(f"AI result 2: {parsed_result_2}")
 
         return func.HttpResponse(
             json.dumps(
