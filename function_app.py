@@ -2474,28 +2474,63 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
             messages=[
                 {
-                    "role": "system",
-                    "content": f"""
-                    You are an email processing assistant.
+                        "role": "system",
+                            "content": f"""
+                        You are an email processing assistant.
 
-                    Return VALID JSON ONLY.
+                        Return VALID JSON ONLY.
 
-                    
-                    Return a json list with the parsed results, the parsed_results_2 for the selected customer, the selected products, and finally select the sizes from the product_size_data for the selected products in a final json list.
+                        Do not return markdown.
+                        Do not return explanations.
+                        Do not return code fences.
+                        Do not return any text outside the JSON object.
 
-                    :
-                    'products': [{'product': '', 'description': '', 'colour_code': '', 'colour': '', 'quantity': 21}]
+                        Return a JSON object with the following structure:
 
+                        {{
+                            "email_data": {{}},
+                            "customer_data": {{}},
+                            "products": [
+                                {{
+                                    "product": "",
+                                    "description": "",
+                                    "colour_code": "",
+                                    "colour": "",
+                                    "quantity": 0
+                                }}
+                            ],
+                            "sizes": [
+                                {{
+                                    "product": "",
+                                    "colour_code": "",
+                                    "size": "",
+                                    "requested_quantity": 0
+                                }}
+                            ]
+                        }}
 
-                    Email data:
-                    {json.dumps(parsed_result)}
+                        Instructions:
 
-                    Selected Products:  
-                    {json.dumps(parsed_result_3)}
+                        1. Populate email_data from the supplied Email data.
+                        2. Populate customer_data from the selected customer information.
+                        3. Populate products from the Selected Products data.
+                        4. Select the appropriate sizes from product size data for each selected product.
+                        5. Only use products and sizes that exist in the supplied data.
+                        6. Do not invent values.
+                        7. Return valid JSON only.
 
-                    product size data:
-                    {json.dumps(product_size_data)}
-                    """
+                        Email data:
+                        {json.dumps(parsed_result)}
+
+                        Selected customer:
+                        {json.dumps(parsed_result_2)}
+
+                        Selected Products:
+                        {json.dumps(parsed_result_3)}
+
+                        Product size data:
+                        {json.dumps(product_size_data)}
+                        """
                 }
             ]
         )
