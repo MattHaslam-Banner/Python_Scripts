@@ -2496,6 +2496,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                                     "description": "",
                                     "colour_code": "",
                                     "colour": "",
+                                    "size": ""
                                     "quantity": 0
                                 }}
                             ],
@@ -2514,7 +2515,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                         1. Populate email_data from the supplied Email data.
                         2. Populate customer_data from the selected customer information.
                         3. Populate products from the Selected Products data.
-                        4. Select the appropriate sizes from product size data for each selected product.
+                        4. match the sizes from the email data to the product size data
                         5. Only use products and sizes that exist in the supplied data.
                         6. Do not invent values.
                         7. Return valid JSON only.
