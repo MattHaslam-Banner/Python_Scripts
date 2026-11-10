@@ -2361,26 +2361,27 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
             messages=[
                 {
                     "role": "system",
-                    "content": """
+                    "content": f"""
                     You are an email processing assistant.
 
                     Return VALID JSON ONLY.
 
-                    identify the most likely customer from the previous order data and fill in the following fields:
+                    Identify the most likely customer from the previous order data.
 
-                    "Selected_Business_ID": "",
-                    "selected_Business_Name": "", 
-                    "selected_business_invoice_address": ""
+                    Return:
 
-                    using email data info :
-                    {parsed_result}
+                    {{
+                        "Selected_Business_ID": "",
+                        "selected_Business_Name": "",
+                        "selected_business_invoice_address": ""
+                    }}
 
-                    and previous order data :
-                    {customer_search_data}
+                    Email data:
+                    {json.dumps(parsed_result)}
 
+                    Previous order data:
+                    {json.dumps(customer_search_data)}
                     """
-
-
                 }
             ]
         )
