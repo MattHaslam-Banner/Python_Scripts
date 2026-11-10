@@ -2551,12 +2551,18 @@ def fetch_sproc_data_json(sproc_name: str):
 
     return result
 
-def fetch_sproc_data_json_explicit(sproc_name: str):
+def fetch_sproc_data_json_explicit(
+    sql: str,
+    params: list = None
+):
 
     conn = get_datalake_connection()
     cursor = conn.cursor()
 
-    cursor.execute(f"{sproc_name}")
+    if params:
+        cursor.execute(sql, params)
+    else:
+        cursor.execute(sql)
 
     columns = [col[0] for col in cursor.description]
 
