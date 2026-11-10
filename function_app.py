@@ -2406,7 +2406,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Product search result: {product_search_data}")
 
-        ai_response = client.chat.completions.create(
+        ai_response_3 = client.chat.completions.create(
             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
             messages=[
                 {
@@ -2429,6 +2429,17 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                 }
             ]
         )
+
+        ai_response_3 = ai_response.choices[0].message.content
+
+        try:
+            parsed_result_3 = json.loads(ai_response_3)
+        except Exception:
+            parsed_result_3 = {
+                "raw_response": ai_response_3
+            }
+
+        logging.info(f"AI result 3: {parsed_result_3}")
 
         return func.HttpResponse(
             json.dumps(
