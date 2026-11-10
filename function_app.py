@@ -2455,6 +2455,11 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                     You are an email processing assistant.
 
                     Return VALID JSON ONLY.
+                    like this:
+                    'school_name': "",
+                    'school_match_note': '',
+                    'products': [{'product': '', 'description': '', 'colour_code': '', 'colour': '', 'quantity': 21}]
+
 
                     Return a json list with the parsed results, the parsed_results_2 for the selected customer, the selected products, and finally select the sizes from the product_size_data for the selected products in a final json list.
 
