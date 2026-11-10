@@ -2406,7 +2406,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Product search result: {product_search_data}")
 
-        ai_response_3 = client.chat.completions.create(
+        ai_response = client.chat.completions.create(
             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
             messages=[
                 {
@@ -2418,7 +2418,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
                     Identify the most likely products from the previous order data.
 
-                    match the schools via the special instructions, and return the product codes and colour codes.
+                    match the schools via the special instructions and the products via the descriptions and colours ways, and return a list of the most likely products and their colours
 
                     Email data:
                     {json.dumps(parsed_result)}
