@@ -2466,7 +2466,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(f"AI result 3: {parsed_result_3}")
 
         product_size_data = fetch_sproc_data_json_explicit(
-            "EXEC dbo.breakneck_build_order_context @items=?",
+            "EXEC dbo.[breakneck_product_sizes_3] @items=?",
             [json.dumps(parsed_result_3)]
         )
 
@@ -2500,16 +2500,16 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
             ]
         )
 
-        ai_response_3 = ai_response.choices[0].message.content
+        ai_response_4 = ai_response.choices[0].message.content
 
         try:
-            parsed_result_3 = json.loads(ai_response_3)
+            parsed_result_4 = json.loads(ai_response_4)
         except Exception:
-            parsed_result_3 = {
-                "raw_response": ai_response_3
+            parsed_result_4 = {
+                "raw_response": ai_response_4
             }    
 
-
+        logging.info(f"AI result 4: {parsed_result_4}")
 
         return func.HttpResponse(
             json.dumps(
