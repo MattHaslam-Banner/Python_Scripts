@@ -2365,7 +2365,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
                     identify the most likely customer from the previous order data and fill in the following fields:
 
-                    "selected_Business_Name": "",
+                    "Selected_Business_ID": "",
+                    "selected_Business_Name": "", 
                     "selected_business_invoice_address": ""
 
                     using email data info :
