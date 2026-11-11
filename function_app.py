@@ -2242,6 +2242,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         # Save attachments
         saved_files = []
 
+        attachment_text = []
+
         for attachment in attachments:
 
             filename = attachment.get("fileName")
@@ -2252,21 +2254,51 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
             file_bytes = base64.b64decode(content_base64)
 
-            file_path = os.path.join(
-                tempfile.gettempdir(),
-                filename
-            )
+            file_path = os.path.join(tempfile.gettempdir(), filename)
 
             with open(file_path, "wb") as f:
                 f.write(file_bytes)
 
-            saved_files.append(
-                {
-                    "filename": filename,
-                    "path": file_path,
-                    "size": len(file_bytes)
-                }
-            )
+            saved_files.append({
+                "filename": filename,
+                "path": file_path,
+                "size": len(file_bytes)
+            })
+
+            # Extract content
+            try:
+
+                if filename.lower().endswith(".txt"):
+                    attachment_text.append(
+                        {
+                            "filename": filename,
+                            "content": file_bytes.decode("utf-8", errors="ignore")
+                        }
+                    )
+
+                elif filename.lower().endswith(".pdf"):
+
+                    reader = PdfReader(file_path)
+
+                    pdf_text = "\n".join(
+                        page.extract_text() or ""
+                        for page in reader.pages
+                    )
+
+                    attachment_text.append(
+                        {
+                            "filename": filename,
+                            "content": pdf_text
+                        }
+                    )
+
+            except Exception as ex:
+
+                logging.warning(
+                    f"Could not parse attachment {filename}: {str(ex)}"
+                )
+
+        logging.info(attachment_text)
 
         # Azure OpenAI / Foundry Client
         client = AzureOpenAI(
@@ -2320,6 +2352,10 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
                     Body:
                     {body}
+
+                    ATTACHMENT CONTENTS
+                    {json.dumps(attachment_text)}
+
                     """
                 }
             ]
@@ -2341,9 +2377,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         likeness_score = 95
 
-        logging.info(f"Extracted delivery address: {delivery_address}")
-        logging.info(f"Extracted invoice address: {invoice_address}")
-        logging.info(f"Extracted customer name: {customer_name}")
+        logging.info(f"{parsed_result}")
 
         customer_search_data = fetch_sproc_data_json(
            f"dbo.breakneck_customers @customer='{customer_sql_name}', @Likeness={likeness_score}"
@@ -2499,14 +2533,6 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                                     "size": ""
                                     "quantity": 0
                                 }}
-                            ],
-                            "sizes": [
-                                {{
-                                    "product": "",
-                                    "colour_code": "",
-                                    "size": "",
-                                    "requested_quantity": 0
-                                }}
                             ]
                         }}
 
@@ -2656,3 +2682,6 @@ def fetch_sproc_data_json_explicit(
     conn.close()
 
     return result
+
+
+
