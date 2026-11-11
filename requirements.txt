@@ -12,3 +12,4 @@ pyodbc
 sendgrid
 sqlalchemy
 openai
+PyPDF2

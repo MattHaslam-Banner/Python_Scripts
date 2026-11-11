@@ -27,7 +27,7 @@ import csv
 import io
 import logging
 import tempfile
-
+from PyPDF2 import PdfReader
 from openai import AzureOpenAI
 
 # import time
