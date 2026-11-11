@@ -2328,11 +2328,22 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                         invoice_address": "",
                         "school_name": "",
                         "order_numbers": [],
+                        "Products_To_Order": [{
+                            CustomerProductCode: "",
+                            CustomerProductDescription: "",
+                            CustomerProductSize: "",
+                            CustomerProductQty: 0,
+                            OurProductCode: "",
+                            OurProductDescription: "",
+                            OurProductColour: "",
+                        }
+                        ],
                         "action_required": "",
                         "priority": "",
                         "summary": ""
                     }
 
+                    OurProductCode, OurProductDescription, OurProductColour may not be present on the order.
                     for the sql_search_business_name, create a minimal string of just one word to maximise search likelihood and remove any special characters or punctuation.
 
                     Priority must be:
