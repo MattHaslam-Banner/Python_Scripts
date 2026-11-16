@@ -2006,7 +2006,6 @@ def fetchGTMRPlainItems(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     except Exception:
-        logging.exception("Fetch failed")
         return func.HttpResponse(
             "Internal server error",
             status_code=500
@@ -2110,48 +2109,65 @@ def NSP_fetch_options(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     except Exception:
-        logging.exception("Fetch failed")
         return func.HttpResponse(
             "Internal server error",
             status_code=500
         )
 
-@app.route(route="NSP_Upload_School_Info", auth_level=func.AuthLevel.FUNCTION)
-def NSP_Upload_School_Info(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(
+    route="NSP_Upload_School_Info",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def NSP_Upload_School_Info(
+    req: func.HttpRequest
+) -> func.HttpResponse:
 
     try:
-        # Raw request body
-        body = req.get_body().decode("utf-8")
 
-        logging.info("=== NSP Upload Received ===")
-        logging.info(f"Method: {req.method}")
-        logging.info(f"Headers: {dict(req.headers)}")
-        logging.info(f"Params: {dict(req.params)}")
-        logging.info(f"Raw Body: {body}")
+        payload = req.get_json()
 
-        # Attempt to parse JSON
-        try:
-            payload = req.get_json()
+        logging.info(
+            json.dumps(payload, indent=2)
+        )
 
-            logging.info("=== JSON Payload ===")
-            logging.info(json.dumps(payload, indent=2))
+        nsp_reference = payload.get(
+            "nspSheetCode"
+        )
 
-        except ValueError:
-            payload = {"raw_body": body}
-            logging.warning("Request body is not valid JSON")
+        if not nsp_reference:
+
+            return func.HttpResponse(
+                json.dumps({
+                    "success": False,
+                    "error":
+                        "Missing nspSheetCode"
+                }),
+                mimetype="application/json",
+                status_code=400
+            )
+
+        json_dump = json.dumps(payload)
+
+        update_nsp_json_dump(
+            nsp_reference,
+            json_dump
+        )
 
         return func.HttpResponse(
             json.dumps({
                 "success": True,
-                "message": "Payload received",
-                "received": payload
+                "message":
+                    f"NSP {nsp_reference} updated"
             }),
             mimetype="application/json",
             status_code=200
         )
 
     except Exception as ex:
-        logging.exception("NSP upload failed")
+
+        logging.exception(
+            "NSP Upload Failed"
+        )
 
         return func.HttpResponse(
             json.dumps({
@@ -2161,6 +2177,7 @@ def NSP_Upload_School_Info(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
             status_code=500
         )
+    
 def fetch_view_data_json(view_name: str):
 
     conn = get_datalake_connection()
@@ -2445,11 +2462,72 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
         selected_business_id = parsed_result_2.get("Selected_Business_ID")
         selected_business_name = parsed_result_2.get("selected_Business_Name")
 
+
+        Special_instructions_data = fetch_sproc_data_json(
+            f"dbo.breakneck_SpecialInstructions @Customer='{selected_business_id}'"
+        )
+
+        ai_response = client.chat.completions.create(
+                    model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": f"""
+                            You are an order matching assistant.
+                            match the products 
+                            Return VALID JSON ONLY.
+        
+                            Do not return markdown.
+                            Do not return explanations.
+                            Do not return code fences.
+                            Do not return text before or after the JSON.
+        
+                            Use ONLY this structure:
+        
+                            {{
+                                "products": [
+                                    {{
+                                        "product": "PRODUCT_CODE",
+                                        "colour_code": "COLOUR_CODE",
+                                        "quantity": 1,
+                                        "confidence": 0
+                                    }}
+                                ]
+                            }}
+        
+                            Rules:
+        
+                            - the likely match is based on the product description and colour in the email.
+                            - product output must be taken from the previous product data.
+                            - colour_code output must be taken from the previous product data.
+                            - quantity must be an integer.
+                            - If quantity is not stated in the email use 1.
+                            - Return only products that are confidently matched.
+                            - Do not invent product codes.
+                            - Do not invent colour codes.
+                            - All products must come from the supplied product data.
+                            - confidence must be a number between 0 and 100, based on how confident you are that the product is a match.
+        
+                            Email data:
+                            {json.dumps(parsed_result)}
+        
+                            Previous product data:
+                            {json.dumps(product_search_data)}
+                            """
+                        }
+                    ]
+                )
+
+
         product_search_data = fetch_sproc_data_json(
             f"dbo.breakneck_products_2 @customer_code='{selected_business_id}'"
         )
 
+
         logging.info(f"Product search result: {product_search_data}")
+        logging.info(f"Special instructions result: {Special_instructions_data}")
+
+
 
         ai_response = client.chat.completions.create(
             model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
@@ -2458,7 +2536,7 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                     "role": "system",
                     "content": f"""
                     You are an order matching assistant.
-
+                    match the products 
                     Return VALID JSON ONLY.
 
                     Do not return markdown.
@@ -2473,21 +2551,24 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
                             {{
                                 "product": "PRODUCT_CODE",
                                 "colour_code": "COLOUR_CODE",
-                                "quantity": 1
+                                "quantity": 1,
+                                "confidence": 0
                             }}
                         ]
                     }}
 
                     Rules:
 
-                    - product must be the matched product code from the supplied data.
-                    - colour_code must be the matched colour code from the supplied data.
+                    - the likely match is based on the product description and colour in the email.
+                    - product output must be taken from the previous product data.
+                    - colour_code output must be taken from the previous product data.
                     - quantity must be an integer.
                     - If quantity is not stated in the email use 1.
                     - Return only products that are confidently matched.
                     - Do not invent product codes.
                     - Do not invent colour codes.
                     - All products must come from the supplied product data.
+                    - confidence must be a number between 0 and 100, based on how confident you are that the product is a match.
 
                     Email data:
                     {json.dumps(parsed_result)}
@@ -2694,5 +2775,46 @@ def fetch_sproc_data_json_explicit(
 
     return result
 
+def update_nsp_json_dump(
+        nsp_reference: str,
+        json_payload: str
+):
+    
+    conn = get_datalake_connection()
 
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        EXEC dbo.Retail_NSP_Update_Master_with_Json_Dump
+            @NSP_Reference=?,
+            @Json_Dump=?
+        """,
+        nsp_reference,
+        json_payload
+    )
+
+    conn.commit()
+
+    conn.close()
+
+def ExecuteStoredProcedure(
+        sproc_name: str,
+        params: list
+):
+    
+    conn = get_datalake_connection()
+
+    cursor = conn.cursor()
+
+    placeholders = ",".join(["?"] * len(params))
+
+    cursor.execute(
+        f"EXEC {sproc_name} {placeholders}",
+        params
+    )
+
+    conn.commit()
+
+    conn.close()
 
