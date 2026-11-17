@@ -2001,6 +2001,8 @@ def fetchNSPSchools(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+
+
 @app.route(route="fetchNSPStores", auth_level=func.AuthLevel.FUNCTION)
 def fetchNSPStores(req: func.HttpRequest) -> func.HttpResponse:
 
@@ -2083,6 +2085,25 @@ def fetchGTMRPlainItems(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         result = fetch_view_data_json(f"dbo.Retail_GTMR_Plain_Items")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
+
+
+@app.route(route="fetchNSPBadgeData", auth_level=func.AuthLevel.FUNCTION)
+def fetchNSPBadgeData(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_sproc_data_json(f"dbo.retail_getBadgesByPrefix @prefix='AAAC'")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
@@ -2262,6 +2283,7 @@ def NSP_Upload_School_Info(
             mimetype="application/json",
             status_code=500
         )
+
     
 def fetch_view_data_json(view_name: str):
 
