@@ -2099,21 +2099,51 @@ def fetchGTMRPlainItems(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-@app.route(route="fetchNSPBadgeData", auth_level=func.AuthLevel.FUNCTION)
-def fetchNSPBadgeData(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(
+    route="fetchNSPBadgeData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchNSPBadgeData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    prefix = req.params.get("prefix")
+
+    if not prefix:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Prefix is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
 
     try:
-        result = fetch_sproc_data_json(f"dbo.retail_getBadgesByPrefix @prefix='AAAC'")
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_getBadgesByPrefix @prefix='{prefix}'"
+        )
 
         return func.HttpResponse(
-            json.dumps(result, default=str),
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
             mimetype="application/json",
             status_code=200
         )
 
-    except Exception:
+    except Exception as ex:
+
+        logging.exception(ex)
+
         return func.HttpResponse(
-            "Internal server error",
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
             status_code=500
         )
 
