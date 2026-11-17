@@ -1916,6 +1916,25 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+@app.route(route="FetchExistingNSPByCode", auth_level=func.AuthLevel.FUNCTION)
+def FetchExistingNSPByCode(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+        result = fetch_sproc_data_json(f"dbo.Retail_NSP_LoadExistingRecord @NSP='NSP1123'")
+
+        return func.HttpResponse(
+            json.dumps(result, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception:
+        logging.exception("Fetch failed")
+        return func.HttpResponse(
+            "Internal server error",
+            status_code=500
+        )
+
 @app.route(route="fetchGTMRProducts", auth_level=func.AuthLevel.FUNCTION)
 def fetchGTMRProducts(req: func.HttpRequest) -> func.HttpResponse:
 
