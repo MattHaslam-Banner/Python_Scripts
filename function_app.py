@@ -1920,18 +1920,46 @@ def fetch_TC_orders_csv(req: func.HttpRequest) -> func.HttpResponse:
 def FetchExistingNSPByCode(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
-        result = fetch_sproc_data_json(f"dbo.Retail_NSP_LoadExistingRecord @NSP='NSP1123'")
+        nsp_code = req.params.get("nsp")
+
+        if not nsp_code:
+            return func.HttpResponse(
+                "Missing nsp parameter",
+                status_code=400
+            )
+
+        result = fetch_sproc_data_json(
+            f"dbo.Retail_NSP_LoadExistingRecord @NSP='{nsp_code}'"
+        )
+
+        if not result.get("data"):
+            return func.HttpResponse(
+                json.dumps({"success": False, "message": "NSP not found"}),
+                mimetype="application/json",
+                status_code=404
+            )
+
+        json_dump = result["data"][0]["Json_Dump"]
 
         return func.HttpResponse(
-            json.dumps(result, default=str),
+            json.dumps({
+                "success": True,
+                "nspReference": result["data"][0]["NSP_Reference"],
+                "formData": json.loads(json_dump)
+            }),
             mimetype="application/json",
             status_code=200
         )
 
     except Exception:
         logging.exception("Fetch failed")
+
         return func.HttpResponse(
-            "Internal server error",
+            json.dumps({
+                "success": False,
+                "message": "Internal server error"
+            }),
+            mimetype="application/json",
             status_code=500
         )
 
