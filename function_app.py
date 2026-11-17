@@ -2109,6 +2109,8 @@ def fetchNSPBadgeData(
 
     prefix = req.params.get("prefix")
 
+    logging.info(f"Fetching badge data for prefix: {prefix}")
+
     if not prefix:
         return func.HttpResponse(
             json.dumps({
