@@ -2124,7 +2124,7 @@ def fetchNSPBadgeData(
     try:
 
         result = fetch_sproc_data_json(
-            f"dbo.retail_getBadgesByPrefix @prefix='{prefix}'"
+            f"dbo.retail_getBadgesByPrefix @Prefix='{prefix}'"
         )
 
         return func.HttpResponse(
