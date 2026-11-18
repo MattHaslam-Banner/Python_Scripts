@@ -2149,6 +2149,57 @@ def fetchNSPBadgeData(
             status_code=500
         )
 
+@app.route(
+    route="fetchNSPRangePlanData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchNSPRangePlanData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    prefix = req.params.get("prefix")
+
+    logging.info(f"Fetching range plan data for prefix: {prefix}")
+
+    if not prefix:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Prefix is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_getRangePlanBaseDataByPrefix @Prefix='{prefix}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
+
 
 @app.route(
     route="NSP_Create_New_NSP",
