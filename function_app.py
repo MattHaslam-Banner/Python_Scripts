@@ -2199,6 +2199,106 @@ def fetchNSPRangePlanData(
             status_code=500
         )
 
+@app.route(
+    route="fetchSchoolStoreStockData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSchoolStoreStockData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    thirdPartyID = req.params.get("thirdPartyID")
+
+    logging.info(f"Fetching stock data for thirdPartyID: {thirdPartyID}")
+
+    if not thirdPartyID:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Third Party ID is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_schooloverview_fetchStoreAvailability @thirdPartyID='{thirdPartyID}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
+@app.route(
+    route="fetchSchoolDCStockData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSchoolDCStockData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    thirdPartyID = req.params.get("thirdPartyID")
+
+    logging.info(f"Fetching stock data for thirdPartyID: {thirdPartyID}")
+
+    if not thirdPartyID:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Third Party ID is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_schooloverview_fetchDCAvailability @thirdPartyID='{thirdPartyID}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
 
 
 @app.route(
