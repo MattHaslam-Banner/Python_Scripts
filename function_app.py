@@ -2351,6 +2351,56 @@ def fetchSchoolOpenOrderData(
             status_code=500
         )
 
+@app.route(    route="fetchSchoolPurchaseOrderData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSchoolPurchaseOrderData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    thirdPartyID = req.params.get("thirdPartyID")
+
+    logging.info(f"Fetching purchase order data for thirdPartyID: {thirdPartyID}")
+
+    if not thirdPartyID:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Third Party ID is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_fetchSchoolPurchaseOrders_byTPID @thirdPartyID='{thirdPartyID}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
+
 
 @app.route(
     route="fetchSchoolDCStockData",
