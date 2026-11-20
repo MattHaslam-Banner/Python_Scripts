@@ -2226,7 +2226,7 @@ def fetchEDCODataBySage(
     try:
 
         result = fetch_sproc_data_json(
-            f"dbo.retail_getEDCODataBySage @SageAccNo='{sageAccNo}'"
+            f"dbo.[retail_fetchEdcoDataBySage] @sageAccNo='{sageAccNo}'"
         )
 
         return func.HttpResponse(
