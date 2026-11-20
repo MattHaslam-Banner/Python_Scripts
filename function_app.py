@@ -4,6 +4,8 @@
 #
 # sys.path.append("./custom_packages")
 
+from sys import prefix
+
 from azure.identity import DefaultAzureCredential
 import azure.functions as func
 from azure.keyvault.secrets import SecretClient
@@ -2175,6 +2177,56 @@ def fetchNSPRangePlanData(
 
         result = fetch_sproc_data_json(
             f"dbo.retail_getRangePlanBaseDataByPrefix @Prefix='{prefix}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
+@app.route(
+    route="fetchEDCODataBySage",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchEDCODataBySage(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    sageAccNo = req.params.get("sageAccNo")
+
+    logging.info(f"Fetching EDCO data for sage account number: {sageAccNo}")
+
+    if not sageAccNo:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Sage Account Number is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.retail_getEDCODataBySage @SageAccNo='{sageAccNo}'"
         )
 
         return func.HttpResponse(
