@@ -3615,14 +3615,19 @@ def save_email_attachments_to_blob(
         logging.warning("Saving attachment to Blob Storage")
         try:
 
-            filename = attachment.get("name")
+            filename = attachment.get("fileName")
 
             if not filename:
                 continue
 
             file_content = attachment.get("contentBase64")
 
+            logging.warning(
+                f"Processing attachment: {filename}"
+            )
+
             if not file_content:
+                logging.warning("Missing filename")
                 continue
 
             buffer = BytesIO(
