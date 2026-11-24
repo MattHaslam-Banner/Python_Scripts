@@ -3426,7 +3426,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
 
                     Return VALID JSON ONLY.
 
-                    Match the customer products to the provided previous order data
+                    Match the customer products to the provided previous order data. In this stage extracted supplier cost may be called cost or price. extract this at line level
 
                     Return:
 
@@ -3481,7 +3481,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
                         "attachment_count": len(saved_files)
                     },
                     "attachments": saved_files,
-                    "ai_result": parsed_result
+                    "ai_result": parsed_result_2
                 },
                 default=str
             ),
