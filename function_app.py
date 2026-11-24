@@ -2706,13 +2706,21 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         for attachment in attachments:
 
-            filename = attachment.get("fileName")
-            content_base64 = attachment.get("contentBase64")
+            logging.warning(
+                f"Attachment Keys: {list(attachment.keys())}"
+            )
 
-            if not filename or not content_base64:
+            filename = attachment.get("fileName")
+            file_content = attachment.get("contentBase64")
+
+            logging.warning(
+                f"Filename: {filename}"
+            )
+
+            if not filename or not file_content:
                 continue
 
-            file_bytes = base64.b64decode(content_base64)
+            file_bytes = base64.b64decode(file_content)
 
             file_path = os.path.join(tempfile.gettempdir(), filename)
 
