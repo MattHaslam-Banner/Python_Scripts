@@ -3451,7 +3451,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
                     {json.dumps(parsed_result)}
 
                     Previous order data:
-                    {json.dumps(PO_search_data)}
+                    {json.dumps(PO_search_data, default=lambda o: o.isoformat())}
                     """
                 }
             ]
