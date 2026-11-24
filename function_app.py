@@ -3261,3 +3261,276 @@ def ExecuteStoredProcedure(
 
     conn.close()
 
+@app.route(route="Supplier_confirmation_email_reader", auth_level=func.AuthLevel.FUNCTION)
+def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpResponse:
+
+    try:
+
+        # Parse payload
+        data = req.get_json()
+
+        subject = data.get("subject", "")
+        sender = data.get("sender", "")
+        body = data.get("body", "")
+        attachments = data.get("attachments", [])
+
+        logging.info(f"Subject: {subject}")
+        logging.info(f"Sender : {sender}")
+        logging.info(f"Attachments: {len(attachments)}")
+
+        # Save attachments
+        saved_files = []
+
+        attachment_text = []
+
+        for attachment in attachments:
+
+            filename = attachment.get("fileName")
+            content_base64 = attachment.get("contentBase64")
+
+            if not filename or not content_base64:
+                continue
+
+            file_bytes = base64.b64decode(content_base64)
+
+            file_path = os.path.join(tempfile.gettempdir(), filename)
+
+            with open(file_path, "wb") as f:
+                f.write(file_bytes)
+
+            saved_files.append({
+                "filename": filename,
+                "path": file_path,
+                "size": len(file_bytes)
+            })
+
+            # Extract content
+            try:
+
+                if filename.lower().endswith(".txt"):
+                    attachment_text.append(
+                        {
+                            "filename": filename,
+                            "content": file_bytes.decode("utf-8", errors="ignore")
+                        }
+                    )
+
+                elif filename.lower().endswith(".pdf"):
+
+                    reader = PdfReader(file_path)
+
+                    pdf_text = "\n".join(
+                        page.extract_text() or ""
+                        for page in reader.pages
+                    )
+
+                    attachment_text.append(
+                        {
+                            "filename": filename,
+                            "content": pdf_text
+                        }
+                    )
+
+            except Exception as ex:
+
+                logging.warning(
+                    f"Could not parse attachment {filename}: {str(ex)}"
+                )
+
+        logging.info(attachment_text)
+
+        # Azure OpenAI / Foundry Client
+        client = AzureOpenAI(
+            api_key=os.environ["AZURE_OPENAI_KEY"],
+            api_version="2024-10-21",
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+        )
+
+        ai_response = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    You are an email processing assistant.
+
+                    Return VALID JSON ONLY.
+
+                    Extract:
+
+                    {
+                        "intent": "",
+                        "customer_name": "",
+                        "business_name": "",
+                        "SQL_search_business_name": "",
+                        "delivery_address": "",
+                        invoice_address": "",
+                        "school_name": "",
+                        "purchase_order": "",
+                        "action_required": "",
+                        "priority": "",
+                        "summary": ""
+                    }
+
+                    
+                    for the sql_search_business_name, create a minimal string of just one word to maximise search likelihood and remove any special characters or punctuation.
+                    the purchase_order should be a reference to our (monkhouse / customer) order number, not the supplier order number. These will be 8 characters long and will either begin with '10' or 'd1
+                    
+                    EMAIL DETAILS
+
+                    From:
+                    {sender}
+
+                    Subject:
+                    {subject}
+
+                    Body:
+                    {body}
+
+                    ATTACHMENT CONTENTS
+                    {json.dumps(attachment_text)}
+
+                    """
+                }
+            ]
+        )
+
+        ai_result = ai_response.choices[0].message.content
+
+        try:
+            parsed_result = json.loads(ai_result)
+        except Exception:
+            parsed_result = {
+                "raw_response": ai_result
+            }
+
+        purchase_order = parsed_result.get("purchase_order")
+
+        likeness_score = 95
+
+        logging.info(f"{parsed_result}")
+
+        PO_search_data = fetch_sproc_data_json(
+           f"dbo.[breakneck_retail_purchase_orders] @purchase_order='{purchase_order}'"
+        )
+
+        logging.info(f"Purchase order search result: {PO_search_data}")
+
+        ai_response = client.chat.completions.create(
+            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""
+                    You are an email processing assistant.
+
+                    Return VALID JSON ONLY.
+
+                    Match the customer products to the provided previous order data
+
+                    Return:
+
+                    {{
+                        "extracted_records_reference": "",
+                        "PO_reference": "",
+                        "Original_Retail_item": "",
+                        "original_retail_colour": "",
+                        "original_retail_size": "",
+                        "original_retail_quantity": "",
+                        "original_retail_due_date": "",
+
+                        "extracted_supplier_product": "",
+                        "extracted_supplier_colour": "",
+                        "extracted_supplier_size": "",
+                        "extracted_supplier_cost": "",
+                        "extracted_supplier_due_date": "",
+
+                    }}
+
+                    Email data:
+                    {json.dumps(parsed_result)}
+
+                    Previous order data:
+                    {json.dumps(PO_search_data)}
+                    """
+                }
+            ]
+        )
+
+        ai_result_2 = ai_response.choices[0].message.content
+
+        try:
+            parsed_result_2 = json.loads(ai_result_2)
+        except Exception:
+            parsed_result_2 = {
+                "raw_response": ai_result_2
+            }
+
+        logging.info(f"AI result 2: {parsed_result_2}")
+
+
+        logging.info(f"extracted matches: {parsed_result_2}")
+
+        return func.HttpResponse(
+            json.dumps(
+                {
+                    "success": True,
+                    "email": {
+                        "sender": sender,
+                        "subject": subject,
+                        "attachment_count": len(saved_files)
+                    },
+                    "attachments": saved_files,
+                    "ai_result": parsed_result
+                },
+                default=str
+            ),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception("Email processing failed")
+
+        return func.HttpResponse(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": str(ex),
+                    "error_type": type(ex).__name__
+                }
+            ),
+            mimetype="application/json",
+            status_code=500
+        )
+    
+def upload_file_to_blob(buffer: BytesIO, filename: str):
+    """
+    Upload report to blob storage and return SAS URL
+    """
+    ##
+    connection_string = get_secret("bannerreportblobsecret")
+    storage_account_name = get_secret("banner-report-blob-name")
+    storage_account_key = get_secret("bannerreportblob")
+    container_name = "supplier-confirmation"
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    blob_client = blob_service_client.get_blob_client(
+        container=container_name,
+        blob=filename
+    )
+    buffer.seek(0)
+
+    logging.warning(
+        f"Uploading file to {container_name}/{filename}"
+    )
+
+    blob_client.upload_blob(
+        buffer,
+        overwrite=True
+    )
+
+    return {
+        "ContainerName": container_name,
+        "FileName": filename
+    }
