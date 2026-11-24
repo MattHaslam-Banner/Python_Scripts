@@ -2910,6 +2910,8 @@ def email_ingest_ai(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"AI result 2: {parsed_result_2}")
 
+
+
         selected_business_id = parsed_result_2.get("Selected_Business_ID")
         selected_business_name = parsed_result_2.get("selected_Business_Name")
 
@@ -3291,6 +3293,12 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             sender=sender
         )
 
+        confirmation_reference_data = fetch_sproc_data_json("exec dbo.retail_GetNextSupplierConfirmationExtractionReference")
+        confirmation_reference = str(
+            confirmation_reference_data[0]["extracted_records_reference"]
+        )
+
+
         logging.warning(f"Saved {len(saved_files)} attachments to Blob Storage")
         logging.info(f"Saved files: {saved_files}")
 
@@ -3484,6 +3492,22 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
 
         logging.info(f"AI result 2: {parsed_result_2}")
 
+        reader_id = insert_supplier_confirmation_reader(
+            extracted_records_reference=str(confirmation_reference),
+            sender=sender,
+            subject=subject,
+            body=body,
+            attachment_count=len(attachments),
+            ai_response_1=json.dumps(parsed_result, default=str),
+            ai_response_2=json.dumps(parsed_result_2, default=str),
+            contains_exceptions=False,
+            manual_confirmation=False
+        )
+
+        logging.info(
+            f"Supplier confirmation reader record created: {reader_id}"
+        )
+
 
         logging.info(f"extracted matches: {parsed_result_2}")
 
@@ -3643,3 +3667,50 @@ def save_email_attachments_to_blob(
             )
 
     return saved_files
+
+def insert_supplier_confirmation_reader(
+    extracted_records_reference: str,
+    sender: str,
+    subject: str,
+    body: str,
+    attachment_count: int,
+    ai_response_1: str,
+    ai_response_2: str,
+    contains_exceptions: bool = False,
+    manual_confirmation: bool = False
+):
+
+    conn = get_datalake_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        EXEC dbo.retail_InsertSupplierConfirmationReader
+            @AI_response_1=?,
+            @AI_response_2=?,
+            @extracted_records_reference=?,
+            @contains_exceptions=?,
+            @manual_confirmation=?,
+            @email_sender=?,
+            @email_subject=?,
+            @email_body=?,
+            @email_attachments=?
+        """,
+        ai_response_1,
+        ai_response_2,
+        extracted_records_reference,
+        contains_exceptions,
+        manual_confirmation,
+        sender,
+        subject,
+        body,
+        attachment_count
+    )
+
+    row = cursor.fetchone()
+
+    conn.commit()
+    conn.close()
+
+    return row[0] if row else None
