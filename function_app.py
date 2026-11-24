@@ -11,7 +11,7 @@ import azure.functions as func
 from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
 import base64
-import datetime
+from datetime import datetime, timezone
 from io import StringIO, BytesIO
 import logging
 import os
@@ -3552,7 +3552,7 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     # Example:
     # supplier-confirmation/2026/11/24/supplier_com/file.pdf
     blob_name = (
-        f"{datetime.utcnow():%Y/%m/%d}/"
+        f"{datetime.now(timezone.utc):%Y/%m/%d}/"
         f"{safe_sender}/"
         f"{filename}"
     )
