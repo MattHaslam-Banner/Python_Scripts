@@ -3278,6 +3278,11 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
         logging.info(f"Sender : {sender}")
         logging.info(f"Attachments: {len(attachments)}")
 
+        saved_files = save_email_attachments_to_blob(
+            attachments=attachments,
+            sender=sender
+        )
+
         # Save attachments
         saved_files = []
 
@@ -3504,25 +3509,46 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             mimetype="application/json",
             status_code=500
         )
-    
-def upload_file_to_blob(buffer: BytesIO, filename: str):
+
+def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     """
-    Upload report to blob storage and return SAS URL
+    Upload attachment to Azure Blob Storage.
+    Returns blob metadata for SQL storage.
     """
-    ##
+
     connection_string = get_secret("bannerreportblobsecret")
-    storage_account_name = get_secret("banner-report-blob-name")
-    storage_account_key = get_secret("bannerreportblob")
     container_name = "supplier-confirmation"
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+
+    blob_service_client = BlobServiceClient.from_connection_string(
+        connection_string
+    )
+
+    # Clean sender for folder path
+    safe_sender = (
+        sender.replace("@", "_")
+        .replace(".", "_")
+        .replace(" ", "_")
+        if sender
+        else "unknown"
+    )
+
+    # Example:
+    # supplier-confirmation/2026/11/24/supplier_com/file.pdf
+    blob_name = (
+        f"{datetime.utcnow():%Y/%m/%d}/"
+        f"{safe_sender}/"
+        f"{filename}"
+    )
+
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
-        blob=filename
+        blob=blob_name
     )
+
     buffer.seek(0)
 
-    logging.warning(
-        f"Uploading file to {container_name}/{filename}"
+    logging.info(
+        f"Uploading attachment to {container_name}/{blob_name}"
     )
 
     blob_client.upload_blob(
@@ -3532,5 +3558,68 @@ def upload_file_to_blob(buffer: BytesIO, filename: str):
 
     return {
         "ContainerName": container_name,
+        "BlobPath": blob_name,
         "FileName": filename
     }
+import base64
+import logging
+from io import BytesIO
+
+
+def save_email_attachments_to_blob(
+    attachments: list,
+    sender: str
+) -> list:
+    """
+    Upload all email attachments to blob storage.
+
+    Returns:
+        [
+            {
+                "ContainerName": "...",
+                "BlobPath": "...",
+                "FileName": "..."
+            }
+        ]
+    """
+
+    saved_files = []
+
+    for attachment in attachments:
+
+        try:
+
+            filename = attachment.get("name")
+
+            if not filename:
+                continue
+
+            file_content = attachment.get("content")
+
+            if not file_content:
+                continue
+
+            buffer = BytesIO(
+                base64.b64decode(file_content)
+            )
+
+            blob_result = upload_file_to_blob(
+                buffer=buffer,
+                filename=filename,
+                sender=sender
+            )
+
+            saved_files.append(blob_result)
+
+            logging.info(
+                f"Successfully uploaded {filename}"
+            )
+
+        except Exception as ex:
+
+            logging.exception(
+                f"Failed to upload attachment "
+                f"{attachment.get('name', 'Unknown')}: {str(ex)}"
+            )
+
+    return saved_files
