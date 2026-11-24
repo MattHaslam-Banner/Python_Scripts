@@ -3530,7 +3530,7 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
 
 
     connection_string = get_secret("bannerreportblobsecret")
-    container_name = "supplier-confirmation"
+    container_name = "supplier-confirmations"
 
     blob_service_client = BlobServiceClient.from_connection_string(
         connection_string
