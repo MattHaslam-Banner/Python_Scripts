@@ -3589,9 +3589,11 @@ def save_email_attachments_to_blob(
     logging.warning("Saving Emails to Blob Storage")
 
     saved_files = []
+    logging.warning(f"Attachments: {len(attachments)}")
 
     for attachment in attachments:
 
+        logging.warning("Saving attachment to Blob Storage")
         try:
 
             filename = attachment.get("name")
