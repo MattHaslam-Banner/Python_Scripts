@@ -3283,6 +3283,9 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             sender=sender
         )
 
+        logging.warning(f"Saved {len(saved_files)} attachments to Blob Storage")
+        logging.info(f"Saved files: {saved_files}")
+
         # Save attachments
         saved_files = []
 
