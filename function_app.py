@@ -3300,7 +3300,6 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
         )
         confirmation_reference = confirmation_reference_data
 
-
         logging.warning(f"Saved {len(saved_files)} attachments to Blob Storage")
         logging.info(f"Saved files: {saved_files}")
 
@@ -3696,7 +3695,6 @@ def insert_supplier_confirmation_reader(
             @manual_confirmation=?,
             @email_sender=?,
             @email_subject=?,
-            @email_body=?,
             @email_attachments=?
         """,
         ai_response_1,
@@ -3706,7 +3704,6 @@ def insert_supplier_confirmation_reader(
         manual_confirmation,
         sender,
         subject,
-        body,
         attachment_count
     )
 
