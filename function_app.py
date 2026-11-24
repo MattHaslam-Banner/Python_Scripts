@@ -3405,7 +3405,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             }
 
         purchase_order = parsed_result.get("purchase_order")
-         logging.info(f"{purchase_order}")
+        logging.info(f"{purchase_order}")
         likeness_score = 95
 
         logging.info(f"{parsed_result}")
