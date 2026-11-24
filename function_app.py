@@ -3293,7 +3293,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             sender=sender
         )
 
-        confirmation_reference_data = fetch_sproc_data_json("exec dbo.retail_GetNextSupplierConfirmationExtractionReference")
+        confirmation_reference_data = fetch_sproc_data_json("dbo.retail_GetNextSupplierConfirmationExtractionReference")
         confirmation_reference = str(
             confirmation_reference_data[0]["extracted_records_reference"]
         )
