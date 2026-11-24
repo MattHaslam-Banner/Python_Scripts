@@ -3620,7 +3620,7 @@ def save_email_attachments_to_blob(
             if not filename:
                 continue
 
-            file_content = attachment.get("content")
+            file_content = attachment.get("contentBase64")
 
             if not file_content:
                 continue
