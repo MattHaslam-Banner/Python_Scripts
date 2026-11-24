@@ -3536,38 +3536,17 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         connection_string
     )
 
-
-
-    # Clean sender for folder path
-    safe_sender = (
-        sender.replace("@", "_")
-        .replace(".", "_")
-        .replace(" ", "_")
-        if sender
-        else "unknown"
-    )
-
-
-
-    # Example:
-    # supplier-confirmation/2026/11/24/supplier_com/file.pdf
-    blob_name = (
-        f"{datetime.now(timezone.utc):%Y/%m/%d}/"
-        f"{safe_sender}/"
-        f"{filename}"
-    )
-
-    logging.info(f"Uploading attachment to {blob_name}")
+    logging.info(f"Uploading attachment to {filename}")
 
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
-        blob=blob_name
+        blob=filename
     )
 
     buffer.seek(0)
 
     logging.info(
-        f"Uploading attachment to {container_name}/{blob_name}"
+        f"Uploading attachment to {filename}"
     )
 
     blob_client.upload_blob(
@@ -3576,12 +3555,12 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     )
 
     logging.warning(f"ContainerName: {container_name}")
-    logging.warning(f"BlobPath: {blob_name}")
+    logging.warning(f"BlobPath: {filename}")
     logging.warning(f"FileName: {filename}")
 
     return {
         "ContainerName": container_name,
-        "BlobPath": blob_name,
+        "BlobPath": filename,
         "FileName": filename
     }
 import base64
@@ -3610,12 +3589,22 @@ def save_email_attachments_to_blob(
     saved_files = []
     logging.warning(f"Attachments: {len(attachments)}")
 
-    for attachment in attachments:
+    for index, attachment in enumerate(attachments, start=1):
 
         logging.warning("Saving attachment to Blob Storage")
         try:
 
             filename = attachment.get("fileName")
+            file_extension = os.path.splitext(filename)[1]
+
+            timestamp = datetime.now(timezone.utc).strftime(
+                "%Y%m%d_%H%M%S"
+            )
+
+            blob_filename = (
+                f"{timestamp}_attachment_{index}"
+                f"{file_extension}"
+            )
 
             if not filename:
                 continue
@@ -3636,7 +3625,7 @@ def save_email_attachments_to_blob(
 
             blob_result = upload_file_to_blob(
                 buffer=buffer,
-                filename=filename,
+                filename=blob_filename,
                 sender=sender
             )
 
