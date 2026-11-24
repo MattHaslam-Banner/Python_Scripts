@@ -3515,9 +3515,7 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     Upload attachment to Azure Blob Storage.
     Returns blob metadata for SQL storage.
     """
-    logging.info(
-        f"Uploading attachment to {container_name}/{blob_name}"
-    )
+
 
 
     connection_string = get_secret("bannerreportblobsecret")
@@ -3526,6 +3524,8 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     blob_service_client = BlobServiceClient.from_connection_string(
         connection_string
     )
+
+
 
     # Clean sender for folder path
     safe_sender = (
@@ -3536,6 +3536,8 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         else "unknown"
     )
 
+
+
     # Example:
     # supplier-confirmation/2026/11/24/supplier_com/file.pdf
     blob_name = (
@@ -3543,6 +3545,8 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         f"{safe_sender}/"
         f"{filename}"
     )
+
+    logging.info(f"Uploading attachment to {blob_name}")
 
     blob_client = blob_service_client.get_blob_client(
         container=container_name,
