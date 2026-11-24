@@ -3564,6 +3564,10 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         overwrite=True
     )
 
+    logging.warning(f"ContainerName: {container_name}")
+    logging.warning(f"BlobPath: {blob_name}")
+    logging.warning(f"FileName: {filename}")
+
     return {
         "ContainerName": container_name,
         "BlobPath": blob_name,
