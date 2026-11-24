@@ -3374,7 +3374,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
 
                     
                     for the sql_search_business_name, create a minimal string of just one word to maximise search likelihood and remove any special characters or punctuation.
-                    the purchase_order should be a reference to our (monkhouse / customer) order number, not the supplier order number. These will be 8 characters long and will either begin with '10' or 'd1
+                    the purchase_order should be a reference to our (monkhouse / customer) order number, not the supplier order number. These will be 8 characters long and will either begin with '10' or 'd1'. This may be called the customer reference, customer order number, or something similar.
                     
                     EMAIL DETAILS
 
@@ -3405,7 +3405,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             }
 
         purchase_order = parsed_result.get("purchase_order")
-
+         logging.info(f"{purchase_order}")
         likeness_score = 95
 
         logging.info(f"{parsed_result}")
