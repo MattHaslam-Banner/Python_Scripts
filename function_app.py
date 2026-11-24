@@ -3515,6 +3515,10 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
     Upload attachment to Azure Blob Storage.
     Returns blob metadata for SQL storage.
     """
+    logging.info(
+        f"Uploading attachment to {container_name}/{blob_name}"
+    )
+
 
     connection_string = get_secret("bannerreportblobsecret")
     container_name = "supplier-confirmation"
@@ -3582,6 +3586,7 @@ def save_email_attachments_to_blob(
             }
         ]
     """
+    logging.warning("Saving Emails to Blob Storage")
 
     saved_files = []
 
