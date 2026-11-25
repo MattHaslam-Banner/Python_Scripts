@@ -3859,3 +3859,53 @@ def save_supplier_confirmation_extractions(
         f"Saved {len(extraction_rows)} supplier confirmation rows "
         f"for extraction reference {extracted_records_reference}"
     )
+
+@app.route(
+    route="fetchSupplierConfirmationLineData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSupplierConfirmationLineData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    extraction_reference = req.params.get("extraction_reference")
+
+    logging.info(f"Fetching supplier confirmation line data for extraction reference: {extraction_reference}")
+
+    if not prefix:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Prefix is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.Retail_SupplierConfirmation_getRowDataByReference @extracted_records_reference='{extraction_reference}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
