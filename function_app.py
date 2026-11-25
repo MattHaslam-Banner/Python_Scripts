@@ -3584,11 +3584,23 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         f"Uploading attachment to {filename}"
     )
 
+    content_type = "application/octet-stream"
+
+    if filename.lower().endswith(".pdf"):
+        content_type = "application/pdf"
+    elif filename.lower().endswith(".png"):
+        content_type = "image/png"
+    elif filename.lower().endswith(".jpg"):
+        content_type = "image/jpeg"
+    elif filename.lower().endswith(".jpeg"):
+        content_type = "image/jpeg"
+
     blob_client.upload_blob(
         buffer,
         overwrite=True,
         content_settings=ContentSettings(
-            content_type="application/pdf"
+            content_type=content_type
+        )
     )
 
     account_name = blob_service_client.account_name
