@@ -2401,6 +2401,44 @@ def fetchSchoolPurchaseOrderData(
             status_code=500
         )
 
+@app.route(    route="fetchSupplierConfirmationOrderList",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSupplierConfirmationOrderList(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+
+    logging.info(f"Fetching supplier confirmation list")
+
+    try:
+
+        result = fetch_sproc_data_json(
+            f"dbo.Retail_supplierConfirmation_getReferencesToCheck"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": result
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
 
 
 @app.route(
