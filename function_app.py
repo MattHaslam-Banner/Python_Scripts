@@ -3165,6 +3165,8 @@ def fetch_sproc_data_json(sproc_name: str):
 
         rows = cursor.fetchall()
 
+        conn.commit()
+
         data = [
             dict(zip(columns, row))
             for row in rows
