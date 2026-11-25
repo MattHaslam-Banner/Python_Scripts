@@ -3674,10 +3674,7 @@ def save_email_attachments_to_blob(
                 "%Y%m%d_%H%M%S"
             )
 
-            blob_filename = (
-                f"{timestamp}_attachment_{index}"
-                f"{file_extension}"
-            )
+
 
             if not filename:
                 continue
@@ -3712,6 +3709,11 @@ def save_email_attachments_to_blob(
                 )
 
                 file_extension = ".png"
+
+            blob_filename = (
+                f"{timestamp}_attachment_{index}"
+                f"{file_extension}"
+            )
 
             buffer = BytesIO(file_bytes)
 
