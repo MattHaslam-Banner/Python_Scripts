@@ -3494,8 +3494,8 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
         logging.info(f"AI result 2: {parsed_result_2}")
 
         save_supplier_confirmation_extractions(
-            extraction_rows=parsed_result_2.get("extracted_rows", []),
-            extracted_records_reference=confirmation_reference
+            parsed_result_2,
+           confirmation_reference
         )
 
         reader_id = insert_supplier_confirmation_reader(
