@@ -3959,3 +3959,53 @@ def fetchSupplierConfirmationattachments(
             mimetype="application/json",
             status_code=500
         )
+
+@app.route(
+    route="fetchSupplierConfirmationMainData",
+    auth_level=func.AuthLevel.FUNCTION
+)
+def fetchSupplierConfirmationMainData(
+    req: func.HttpRequest
+) -> func.HttpResponse:
+
+    extraction_reference = req.params.get("extraction_reference")
+
+    logging.info(f"Fetching supplier confirmation main data for extraction reference: {extraction_reference}")
+
+    if not extraction_reference:
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": "Extraction reference is required"
+            }),
+            mimetype="application/json",
+            status_code=400
+        )
+
+    try:
+
+        main_data = fetch_sproc_data_json(
+            f"dbo.Retail_SupplierConfirmation_getRowDataByReference @extracted_records_reference='{extraction_reference}'"
+        )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "data": main_data
+            }, default=str),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as ex:
+
+        logging.exception(ex)
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "message": str(ex)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
