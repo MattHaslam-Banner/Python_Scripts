@@ -21,7 +21,7 @@ import pandas as pd
 import pyodbc
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
-from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions, ContentSettings
 from sqlalchemy import create_engine, text
 import urllib
 import json
@@ -3586,7 +3586,9 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
 
     blob_client.upload_blob(
         buffer,
-        overwrite=True
+        overwrite=True,
+        content_settings=ContentSettings(
+            content_type="application/pdf"
     )
 
     account_name = blob_service_client.account_name
