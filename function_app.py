@@ -3848,7 +3848,7 @@ def save_supplier_confirmation_extractions(
             row.get("extracted_supplier_cost")
         )
 
-    conn.commit()
+    conn.commit() 
 
     logging.info(
         f"Saved {len(extraction_rows)} supplier confirmation rows "
