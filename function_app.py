@@ -31,6 +31,7 @@ import logging
 import tempfile
 from PyPDF2 import PdfReader
 from openai import AzureOpenAI
+import fitz
 
 # import time
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
@@ -3665,7 +3666,9 @@ def save_email_attachments_to_blob(
         try:
 
             filename = attachment.get("fileName")
-            file_extension = os.path.splitext(filename)[1]
+            file_extension = os.path.splitext(
+                filename
+            )[1].lower()
 
             timestamp = datetime.now(timezone.utc).strftime(
                 "%Y%m%d_%H%M%S"
@@ -3688,10 +3691,25 @@ def save_email_attachments_to_blob(
             if not file_content:
                 logging.warning("Missing filename")
                 continue
-
-            buffer = BytesIO(
-                base64.b64decode(file_content)
+            
+            file_bytes = base64.b64decode(
+                file_content
             )
+
+            if file_extension == ".pdf":
+
+                logging.warning(
+                    f"Converting PDF to PNG: {filename}"
+                )
+
+                file_bytes = convert_pdf_to_png(
+                    file_bytes,
+                    filename
+                )
+
+                file_extension = ".png"
+
+            buffer = BytesIO(file_bytes)
 
             blob_result = upload_file_to_blob(
                 buffer=buffer,
@@ -4050,3 +4068,31 @@ def fetchSupplierConfirmationMainData(
             mimetype="application/json",
             status_code=500
         )
+
+def convert_pdf_to_png(
+    pdf_bytes: bytes,
+    filename: str
+):
+    """
+    Converts page 1 of a PDF into a PNG.
+
+    Returns:
+    PNG bytes
+    """
+
+    pdf_document = fitz.open(
+        stream=pdf_bytes,
+        filetype="pdf"
+    )
+
+    page = pdf_document.load_page(0)
+
+    pix = page.get_pixmap(
+        matrix=fitz.Matrix(2, 2)
+    )
+
+    png_bytes = pix.tobytes("png")
+
+    pdf_document.close()
+
+    return png_bytes
