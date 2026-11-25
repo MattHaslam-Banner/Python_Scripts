@@ -3749,6 +3749,7 @@ def save_supplier_confirmation_file_attachments_in_datalake(
     attachments,
     extracted_records_reference
 ):
+    logging.warning(attachments )
     """
     Inserts attachment records into
     dbo.retail_supplierConfirmationExtractionsAttachments
