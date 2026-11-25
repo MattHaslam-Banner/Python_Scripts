@@ -13,3 +13,4 @@ sendgrid
 sqlalchemy
 openai
 PyPDF2
+PyMuPDF
