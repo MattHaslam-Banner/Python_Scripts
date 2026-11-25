@@ -3749,7 +3749,8 @@ def save_supplier_confirmation_file_attachments_in_datalake(
     attachments,
     extracted_records_reference
 ):
-    logging.warning(attachments )
+    logging.warning("save supplier confirmation file attachments in datalake")
+    logging.warning(attachments)
     """
     Inserts attachment records into
     dbo.retail_supplierConfirmationExtractionsAttachments
@@ -3759,12 +3760,14 @@ def save_supplier_confirmation_file_attachments_in_datalake(
         {
             "ContainerName": "supplier-confirmations",
             "BlobPath": "20261125_080622_attachment_1.pdf",
-            "FileName": "20261125_080622_attachment_1.pdf"
+            "FileName": "20261125_080622_attachment_1.pdf",
+            "SAS_URL": "https://example.com/attachment_1.pdf"
         },
         {
             "ContainerName": "supplier-confirmations",
             "BlobPath": "20261125_080622_attachment_2.png",
-            "FileName": "20261125_080622_attachment_2.png"
+            "FileName": "20261125_080622_attachment_2.png",
+            "SAS_URL": "https://example.com/attachment_2.png"
         }
     ]
     """
