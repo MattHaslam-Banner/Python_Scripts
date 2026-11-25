@@ -3786,7 +3786,7 @@ def save_supplier_confirmation_file_attachments_in_datalake(
             CreatedDate,
             extracted_records_reference
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     """
 
     created_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
