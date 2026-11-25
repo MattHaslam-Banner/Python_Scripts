@@ -3301,7 +3301,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
         )
         # confirmation_reference = confirmation_reference_data
 
-        save_supplier_confirmation_file_attachments_in_datalake(saved_files)
+        save_supplier_confirmation_file_attachments_in_datalake(saved_files, confirmation_reference)
 
         # Save attachments
         saved_files = []
@@ -3715,7 +3715,6 @@ def insert_supplier_confirmation_reader(
     return row[0] if row else None
 
 def save_supplier_confirmation_file_attachments_in_datalake(
-    conn,
     attachments,
     extracted_records_reference
 ):
@@ -3737,6 +3736,8 @@ def save_supplier_confirmation_file_attachments_in_datalake(
         }
     ]
     """
+
+    conn = get_datalake_connection()
 
     cursor = conn.cursor()
 
