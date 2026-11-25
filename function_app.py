@@ -3293,15 +3293,14 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
             sender=sender
         )
 
+        logging.warning(f"Saved files: {saved_files}")
+
         confirmation_reference_data = fetch_sproc_data_json("dbo.retail_GetNextSupplierConfirmationExtractionReference")
-        logging.warning(confirmation_reference_data)
         confirmation_reference = str(
             confirmation_reference_data["data"][0]["extracted_records_reference"]
         )
-        confirmation_reference = confirmation_reference_data
+        # confirmation_reference = confirmation_reference_data
 
-        logging.warning(f"Saved {len(saved_files)} attachments to Blob Storage")
-        logging.info(f"Saved files: {saved_files}")
 
         # Save attachments
         saved_files = []
