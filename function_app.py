@@ -3691,13 +3691,17 @@ def save_email_attachments_to_blob(
             if not file_content:
                 logging.warning("Missing filename")
                 continue
-            
+
             file_bytes = base64.b64decode(
                 file_content
             )
 
-            if file_extension == ".pdf":
+            logging.warning(
+                f"file_extension={file_extension}"
+            )
 
+            if file_extension == ".pdf":
+                logging.warning("pdf section entered")
                 logging.warning(
                     f"Converting PDF to PNG: {filename}"
                 )
