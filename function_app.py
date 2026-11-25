@@ -3301,6 +3301,7 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
         )
         # confirmation_reference = confirmation_reference_data
 
+        save_supplier_confirmation_file_attachments_in_datalake(saved_files)
 
         # Save attachments
         saved_files = []
@@ -3712,3 +3713,60 @@ def insert_supplier_confirmation_reader(
     conn.close()
 
     return row[0] if row else None
+
+def save_supplier_confirmation_file_attachments_in_datalake(
+    conn,
+    attachments,
+    extracted_records_reference
+):
+    """
+    Inserts attachment records into
+    dbo.retail_supplierConfirmationExtractionsAttachments
+
+    attachments example:
+    [
+        {
+            "ContainerName": "supplier-confirmations",
+            "BlobPath": "20261125_080622_attachment_1.pdf",
+            "FileName": "20261125_080622_attachment_1.pdf"
+        },
+        {
+            "ContainerName": "supplier-confirmations",
+            "BlobPath": "20261125_080622_attachment_2.png",
+            "FileName": "20261125_080622_attachment_2.png"
+        }
+    ]
+    """
+
+    cursor = conn.cursor()
+
+    insert_sql = """
+        INSERT INTO dbo.retail_supplierConfirmationExtractionsAttachments
+        (
+            FileName,
+            ContainerName,
+            BlobPath,
+            CreatedDate,
+            extracted_records_reference
+        )
+        VALUES (?, ?, ?, ?, ?)
+    """
+
+    created_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    for attachment in attachments:
+        cursor.execute(
+            insert_sql,
+            attachment["FileName"],
+            attachment["ContainerName"],
+            attachment["BlobPath"],
+            created_date,
+            str(extracted_records_reference)
+        )
+
+    conn.commit()
+
+    logging.info(
+        f"Saved {len(attachments)} attachment records "
+        f"for extraction reference {extracted_records_reference}"
+    )
