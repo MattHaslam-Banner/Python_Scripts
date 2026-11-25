@@ -3493,6 +3493,11 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
 
         logging.info(f"AI result 2: {parsed_result_2}")
 
+        save_supplier_confirmation_extractions(
+            extraction_rows=parsed_result_2.get("extracted_rows", []),
+            extracted_records_reference=confirmation_reference
+        )
+
         reader_id = insert_supplier_confirmation_reader(
             extracted_records_reference=str(confirmation_reference),
             sender=sender,
@@ -3769,5 +3774,83 @@ def save_supplier_confirmation_file_attachments_in_datalake(
 
     logging.info(
         f"Saved {len(attachments)} attachment records "
+        f"for extraction reference {extracted_records_reference}"
+    )
+
+def save_supplier_confirmation_extractions(
+    extraction_rows,
+    extracted_records_reference
+):
+    """
+    Saves extracted supplier confirmation rows into
+    dbo.retail_supplierConfirmationExtractions
+
+    extraction_rows example:
+    [
+        {
+            "PO_reference": "D1513844",
+            "Original_Retail_item": "AAAW0904971",
+            "original_retail_colour": "MINA",
+            "original_retail_size": "C34",
+            "original_retail_quantity": 12,
+            "original_retail_due_date": "2026-11-30",
+            "extracted_supplier_product": "Argoed pullover",
+            "extracted_supplier_colour": "",
+            "extracted_supplier_size": "34",
+            "extracted_supplier_cost": "",
+            "extracted_supplier_due_date": "2027-01-22"
+        }
+    ]
+    """
+
+    conn = get_datalake_connection()
+    cursor = conn.cursor()
+
+    insert_sql = """
+        INSERT INTO dbo.retail_supplierConfirmationExtractions
+        (
+            extracted_records_reference,
+            PO_reference,
+            Original_Retail_item,
+            original_retail_colour,
+            original_retail_size,
+            original_retail_quantity,
+            original_retail_due_date,
+            supplier_confirmed_quantity,
+            supplier_confirmed_due_date,
+            extracted_supplier_product,
+            extracted_supplier_colour,
+            extracted_supplier_size,
+            extracted_supplier_cost
+        )
+        VALUES
+        (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    """
+
+    for row in extraction_rows:
+
+        cursor.execute(
+            insert_sql,
+            str(extracted_records_reference),
+            row.get("PO_reference"),
+            row.get("Original_Retail_item"),
+            row.get("original_retail_colour"),
+            row.get("original_retail_size"),
+            row.get("original_retail_quantity"),
+            row.get("original_retail_due_date"),
+            row.get("original_retail_quantity"),  # supplier_confirmed_quantity
+            row.get("extracted_supplier_due_date"),  # supplier_confirmed_due_date
+            row.get("extracted_supplier_product"),
+            row.get("extracted_supplier_colour"),
+            row.get("extracted_supplier_size"),
+            row.get("extracted_supplier_cost")
+        )
+
+    conn.commit()
+
+    logging.info(
+        f"Saved {len(extraction_rows)} supplier confirmation rows "
         f"for extraction reference {extracted_records_reference}"
     )
