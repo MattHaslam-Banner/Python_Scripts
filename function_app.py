@@ -11,7 +11,7 @@ import azure.functions as func
 from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
 import base64
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from io import StringIO, BytesIO
 import logging
 import os
@@ -3589,14 +3589,35 @@ def upload_file_to_blob(buffer: BytesIO, filename: str, sender: str = None):
         overwrite=True
     )
 
-    logging.warning(f"ContainerName: {container_name}")
-    logging.warning(f"BlobPath: {filename}")
-    logging.warning(f"FileName: {filename}")
+    account_name = blob_service_client.account_name
+
+    connection_string_parts = dict(
+        item.split("=", 1)
+        for item in connection_string.split(";")
+        if "=" in item
+    )
+
+    account_key = connection_string_parts.get("AccountKey")
+
+    sas_token = generate_blob_sas(
+        account_name=account_name,
+        container_name=container_name,
+        blob_name=filename,
+        account_key=account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.now(timezone.utc) + timedelta(days=1)
+    )
+
+    sas_url = (
+        f"https://{account_name}.blob.core.windows.net/"
+        f"{container_name}/{filename}?{sas_token}"
+    )
 
     return {
         "ContainerName": container_name,
         "BlobPath": filename,
-        "FileName": filename
+        "FileName": filename,
+        "SAS_URL": sas_url
     }
 import base64
 import logging
@@ -3757,6 +3778,7 @@ def save_supplier_confirmation_file_attachments_in_datalake(
             FileName,
             ContainerName,
             BlobPath,
+            SAS_URL,
             CreatedDate,
             extracted_records_reference
         )
@@ -3771,6 +3793,7 @@ def save_supplier_confirmation_file_attachments_in_datalake(
             attachment["FileName"],
             attachment["ContainerName"],
             attachment["BlobPath"],
+            attachment["SAS_URL"],
             created_date,
             str(extracted_records_reference)
         )
