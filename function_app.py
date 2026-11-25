@@ -3454,6 +3454,9 @@ def Supplier_confirmation_email_reader(req: func.HttpRequest) -> func.HttpRespon
                     Return VALID JSON ONLY.
 
                     Match the customer products to the provided previous order data. In this stage extracted supplier cost may be called cost or price. extract this at line level
+                    do not invent any values. If a value is not present in the email or previous order data, leave it blank.
+                    within the extracted supplier date, use the format YYYY-MM-DD. If the date is not present in the email, leave it blank.
+                    do not include any other information in the date element
 
                     Return:
 
