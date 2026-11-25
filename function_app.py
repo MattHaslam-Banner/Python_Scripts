@@ -3935,7 +3935,7 @@ def fetchSupplierConfirmationattachments(
     try:
 
         attachments = fetch_sproc_data_json(
-            f"dbo.Retail_SupplierConfirmation_getRowDataByReference @extracted_records_reference='{extraction_reference}'"
+            f"dbo.retail_supplierConfirmaton_GetAttachmentsByReference @extraction_reference='{extraction_reference}'"
         )
 
         return func.HttpResponse(
@@ -3985,7 +3985,7 @@ def fetchSupplierConfirmationMainData(
     try:
 
         main_data = fetch_sproc_data_json(
-            f"dbo.Retail_SupplierConfirmation_getRowDataByReference @extracted_records_reference='{extraction_reference}'"
+            f"dbo.retail_supplierConfirmations_getMainDataByReference @extracted_records_reference='{extraction_reference}'"
         )
 
         return func.HttpResponse(
